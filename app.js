@@ -1,11 +1,10 @@
 const cfg = window.LEO_CONFIG || {};
-
 const SUPABASE_URL = cfg.SUPABASE_URL;
 const SUPABASE_KEY = cfg.SUPABASE_KEY;
 
 const app = document.getElementById("app");
 
-let supabase = null;
+let supabaseClient = null;
 let currentUser = null;
 let currentProfile = null;
 let people = [];
@@ -15,160 +14,65 @@ let messageChannel = null;
 let peopleTimer = null;
 let selectedMedia = null;
 
-/* =========================================================
-   HELPERS
-   ========================================================= */
-
 function configured() {
-  return (
-    !!SUPABASE_URL &&
+  return !!SUPABASE_URL &&
     !!SUPABASE_KEY &&
-    !SUPABASE_KEY.includes("PASTE_YOUR")
-  );
+    !SUPABASE_KEY.includes("PASTE_YOUR");
 }
 
 function escapeHtml(value = "") {
-  return String(value).replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
+  return String(value).replace(/[&<>"']/g, c => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#039;"
   }[c]));
 }
 
 function render(html) {
-  if (app) {
-    app.innerHTML = html;
-  }
+  app.innerHTML = html;
 }
 
-function showStartupError(title, message) {
+function showConfigError() {
   render(`
     <main class="screen center">
       <div class="brand">🦁</div>
       <h1>Leo Chat</h1>
-      <p class="tagline">Chat. Connect. Roar.</p>
+      <p class="muted">Fresh web version</p>
 
       <div class="card error-card">
-        <h2>${escapeHtml(title)}</h2>
-        <p>${escapeHtml(message)}</p>
-
-        <button
-          class="outline"
-          onclick="location.reload()"
-        >
-          Reload Leo Chat
-        </button>
+        <h2>One setup step</h2>
+        <p>Add your Supabase <b>publishable</b> key to <code>config.js</code>.</p>
+        <p class="muted small">
+          This fresh version does not use the old GitHub configuration.
+        </p>
       </div>
     </main>
   `);
 }
 
-/*
-  Prevent any Supabase request from keeping the app stuck
-  forever.
-*/
-async function withTimeout(promise, milliseconds, message) {
-  let timer;
-
-  const timeoutPromise = new Promise((_, reject) => {
-    timer = setTimeout(() => {
-      reject(new Error(message));
-    }, milliseconds);
-  });
-
-  try {
-    return await Promise.race([
-      promise,
-      timeoutPromise
-    ]);
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-/* =========================================================
-   CONFIG ERROR
-   ========================================================= */
-
-function showConfigError() {
-  showStartupError(
-    "Supabase key missing",
-    "Add your Supabase publishable key to config.js."
-  );
-}
-
-/* =========================================================
-   STARTUP
-   ========================================================= */
-
 async function boot() {
-  try {
-    render(`
-      <main class="screen center">
-        <div class="brand">🦁</div>
-        <h1>Leo Chat</h1>
-        <p class="tagline">Chat. Connect. Roar.</p>
-        <p class="muted">Connecting...</p>
-      </main>
-    `);
+  if (!configured()) {
+    showConfigError();
+    return;
+  }
 
-    if (!configured()) {
-      showConfigError();
-      return;
-    }
+  supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
 
-    /*
-      Make sure the Supabase browser library actually loaded.
-    */
-    if (
-      !window.supabase ||
-      typeof window.supabase.createClient !== "function"
-    ) {
-      showStartupError(
-        "Leo Chat could not start",
-        "The Supabase web library did not load. Refresh the page and try again."
-      );
-      return;
-    }
+  const { data } = await supabaseClient.auth.getSession();
 
-    supabase = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
-    );
+  currentUser = data.session?.user || null;
 
-    /*
-      Give the session request a maximum of 10 seconds.
-    */
-    const sessionResult = await withTimeout(
-      supabase.auth.getSession(),
-      10000,
-      "Supabase did not respond while checking your session."
-    );
-
-    currentUser =
-      sessionResult?.data?.session?.user || null;
-
-    if (currentUser) {
-      await enterApp();
-    } else {
-      renderWelcome();
-    }
-  } catch (error) {
-    console.error("Leo Chat startup error:", error);
-
-    showStartupError(
-      "Startup error",
-      error?.message ||
-        "Leo Chat could not finish starting."
-    );
+  if (currentUser) {
+    await enterApp();
+  } else {
+    renderWelcome();
   }
 }
-
-/* =========================================================
-   WELCOME
-   ========================================================= */
 
 function renderWelcome() {
   render(`
@@ -196,24 +100,15 @@ function renderWelcome() {
           placeholder="Password"
         >
 
-        <button
-          class="gold"
-          id="login"
-        >
+        <button class="gold" id="login">
           Sign in
         </button>
 
-        <button
-          class="outline"
-          id="signup"
-        >
+        <button class="outline" id="signup">
           Create account
         </button>
 
-        <p
-          id="authMsg"
-          class="message"
-        ></p>
+        <p id="authMsg" class="message"></p>
       </div>
     </main>
   `);
@@ -225,25 +120,15 @@ function renderWelcome() {
     auth("signup");
 }
 
-/* =========================================================
-   AUTH
-   ========================================================= */
-
 async function auth(mode) {
-  const emailInput =
-    document.getElementById("email");
+  const email =
+    document.getElementById("email").value.trim();
 
-  const passwordInput =
-    document.getElementById("password");
+  const password =
+    document.getElementById("password").value;
 
   const msg =
     document.getElementById("authMsg");
-
-  const email =
-    emailInput?.value.trim() || "";
-
-  const password =
-    passwordInput?.value || "";
 
   if (!email || !password) {
     msg.textContent =
@@ -253,154 +138,118 @@ async function auth(mode) {
 
   msg.textContent =
     mode === "login"
-      ? "Signing in..."
-      : "Creating account...";
+      ? "Signing in…"
+      : "Creating account…";
 
   try {
     let result;
 
     if (mode === "login") {
-      result = await withTimeout(
-        supabase.auth.signInWithPassword({
+      result =
+        await supabaseClient.auth.signInWithPassword({
           email,
           password
-        }),
-        15000,
-        "The login request timed out. Check your internet connection and try again."
-      );
+        });
     } else {
-      result = await withTimeout(
-        supabase.auth.signUp({
+      result =
+        await supabaseClient.auth.signUp({
           email,
           password
-        }),
-        15000,
-        "The account creation request timed out. Check your internet connection and try again."
-      );
+        });
     }
 
     if (result.error) {
       throw result.error;
     }
 
-    if (result.data?.session) {
-      currentUser =
-        result.data.user ||
-        result.data.session.user;
+    if (result.data.session) {
+      currentUser = result.data.user;
 
       await enterApp();
     } else {
       msg.textContent =
         "Account created. Check your email if confirmation is enabled, then sign in.";
     }
-  } catch (error) {
-    console.error("Authentication error:", error);
-
+  } catch (e) {
     msg.textContent =
-      error?.message ||
-      "Authentication failed.";
+      e.message || "Authentication failed.";
   }
 }
-
-/* =========================================================
-   ENTER APP
-   ========================================================= */
 
 async function enterApp() {
-  try {
-    /*
-      Profile request gets its own timeout.
-    */
-    const profileResult =
-      await withTimeout(
-        supabase
-          .from("profiles")
-          .select(
-            "id,username,display_name,avatar,created_at"
-          )
-          .eq("id", currentUser.id)
-          .maybeSingle(),
+  const profileResult =
+    await supabaseClient
+      .from("profiles")
+      .select(
+        "id,username,display_name,avatar,created_at"
+      )
+      .eq("id", currentUser.id)
+      .maybeSingle();
 
-        10000,
-
-        "Supabase did not respond while loading your profile."
-      );
-
-    if (profileResult.error) {
-      renderDbError(
-        profileResult.error.message
-      );
-      return;
-    }
-
-    currentProfile =
-      profileResult.data || null;
-
-    if (!currentProfile) {
-      renderProfile(true);
-      return;
-    }
-
-    /*
-      Loading other users also gets a timeout.
-    */
-    await withTimeout(
-      loadPeople(),
-      10000,
-      "Supabase did not respond while loading Leo users."
+  if (profileResult.error) {
+    renderDbError(
+      profileResult.error.message
     );
-
-    renderHome();
-    startPeopleRefresh();
-  } catch (error) {
-    console.error("Enter app error:", error);
-
-    showStartupError(
-      "Could not load Leo Chat",
-      error?.message ||
-        "Your account was found, but Leo Chat could not finish loading."
-    );
+    return;
   }
-}
 
-/* =========================================================
-   LOAD PEOPLE
-   ========================================================= */
+  currentProfile =
+    profileResult.data;
+
+  if (!currentProfile) {
+    renderProfile(true);
+    return;
+  }
+
+  await loadPeople();
+
+  renderHome();
+
+  startPeopleRefresh();
+}
 
 async function loadPeople() {
-  const result = await supabase
-    .from("profiles")
-    .select(
-      "id,username,display_name,avatar,created_at"
-    )
-    .neq("id", currentUser.id)
-    .order("created_at", {
-      ascending: true
-    });
+  const result =
+    await supabaseClient
+      .from("profiles")
+      .select(
+        "id,username,display_name,avatar,created_at"
+      )
+      .neq("id", currentUser.id)
+      .order("created_at", {
+        ascending: true
+      });
 
-  if (result.error) {
-    throw result.error;
+  if (!result.error) {
+    people =
+      result.data || [];
   }
-
-  people = result.data || [];
-
-  return people;
 }
-
-/* =========================================================
-   DATABASE ERROR
-   ========================================================= */
 
 function renderDbError(message) {
-  showStartupError(
-    "Supabase connection problem",
-    message
-  );
-}
+  render(`
+    <main class="screen center">
+      <div class="brand">🦁</div>
 
-/* =========================================================
-   PROFILE
-   ========================================================= */
+      <h1>Leo Chat</h1>
+
+      <div class="card error-card">
+        <h2>Supabase connection problem</h2>
+
+        <p>
+          ${escapeHtml(message)}
+        </p>
+
+        <button
+          class="outline"
+          onclick="location.reload()"
+        >
+          Try again
+        </button>
+      </div>
+    </main>
+  `);
+}
 
 function renderProfile(firstTime = false) {
   render(`
@@ -427,17 +276,22 @@ function renderProfile(firstTime = false) {
 
         <div class="avatar-row">
           ${
-            ["🦁", "🐯", "🐺", "🦊", "🐼", "🐻"]
+            [
+              "🦁",
+              "🐯",
+              "🐺",
+              "🦊",
+              "🐼",
+              "🐻"
+            ]
               .map(
-                (x) => `
-                  <button
-                    type="button"
+                x =>
+                  `<button
                     class="avatar-choice"
                     data-avatar="${x}"
                   >
                     ${x}
-                  </button>
-                `
+                  </button>`
               )
               .join("")
           }
@@ -494,28 +348,31 @@ function renderProfile(firstTime = false) {
 
   document.getElementById(
     "avatarPreview"
-  ).textContent = chosenAvatar;
+  ).textContent =
+    chosenAvatar;
 
   document
     .querySelectorAll(".avatar-choice")
-    .forEach((button) => {
-      button.onclick = () => {
+    .forEach(btn => {
+      btn.onclick = () => {
         chosenAvatar =
-          button.dataset.avatar;
+          btn.dataset.avatar;
 
         document.getElementById(
           "avatarPreview"
-        ).textContent = chosenAvatar;
+        ).textContent =
+          chosenAvatar;
       };
     });
 
   document.getElementById(
     "saveProfile"
   ).onclick = async () => {
-    const displayName =
+    const display_name =
       document
         .getElementById("displayName")
-        .value.trim();
+        .value
+        .trim();
 
     const username =
       document
@@ -526,70 +383,51 @@ function renderProfile(firstTime = false) {
         .replace(/[^a-z0-9_]/g, "");
 
     const msg =
-      document.getElementById("profileMsg");
+      document.getElementById(
+        "profileMsg"
+      );
 
-    if (!displayName || !username) {
+    if (!display_name || !username) {
       msg.textContent =
         "Enter a display name and username.";
+
       return;
     }
 
     const payload = {
       id: currentUser.id,
-      display_name: displayName,
+      display_name,
       username,
       avatar: chosenAvatar
     };
 
-    msg.textContent =
-      "Saving profile...";
+    const result =
+      currentProfile
+        ? await supabaseClient
+            .from("profiles")
+            .update(payload)
+            .eq("id", currentUser.id)
+            .select()
+            .single()
+        : await supabaseClient
+            .from("profiles")
+            .insert(payload)
+            .select()
+            .single();
 
-    try {
-      const result = currentProfile
-        ? await withTimeout(
-            supabase
-              .from("profiles")
-              .update(payload)
-              .eq("id", currentUser.id)
-              .select()
-              .single(),
-
-            10000,
-
-            "Saving your profile timed out."
-          )
-        : await withTimeout(
-            supabase
-              .from("profiles")
-              .insert(payload)
-              .select()
-              .single(),
-
-            10000,
-
-            "Creating your profile timed out."
-          );
-
-      if (result.error) {
-        throw result.error;
-      }
-
-      currentProfile =
-        result.data;
-
-      await loadPeople();
-
-      renderHome();
-    } catch (error) {
-      console.error(
-        "Profile save error:",
-        error
-      );
-
+    if (result.error) {
       msg.textContent =
-        error?.message ||
-        "Could not save your profile.";
+        result.error.message;
+
+      return;
     }
+
+    currentProfile =
+      result.data;
+
+    await loadPeople();
+
+    renderHome();
   };
 
   const cancel =
@@ -598,13 +436,10 @@ function renderProfile(firstTime = false) {
     );
 
   if (cancel) {
-    cancel.onclick = renderHome;
+    cancel.onclick =
+      renderHome;
   }
 }
-
-/* =========================================================
-   HOME
-   ========================================================= */
 
 function renderHome() {
   render(`
@@ -613,12 +448,14 @@ function renderHome() {
       <header class="app-header">
 
         <div>
-          <h1>Leo Chat 🦁</h1>
+          <h1>
+            Leo Chat 🦁
+          </h1>
 
           <p>
             ${escapeHtml(
               currentProfile?.display_name ||
-                "Welcome"
+              "Welcome"
             )}
           </p>
         </div>
@@ -655,7 +492,6 @@ function renderHome() {
                 .join("")
             : `
               <div class="empty">
-
                 <div>🦁</div>
 
                 <h3>
@@ -666,7 +502,6 @@ function renderHome() {
                   Create another Leo account
                   to start chatting.
                 </p>
-
               </div>
             `
         }
@@ -707,44 +542,35 @@ function renderHome() {
   document.getElementById(
     "refresh"
   ).onclick = async () => {
-    try {
-      await loadPeople();
-      renderHome();
-    } catch (error) {
-      alert(
-        error?.message ||
-          "Could not refresh users."
-      );
-    }
+    await loadPeople();
+    renderHome();
   };
 
   document.getElementById(
     "settings"
-  ).onclick = renderSettings;
+  ).onclick =
+    renderSettings;
 
   document.getElementById(
     "settings2"
-  ).onclick = renderSettings;
+  ).onclick =
+    renderSettings;
 
   document
     .querySelectorAll("[data-person]")
-    .forEach((element) => {
-      element.onclick = () =>
+    .forEach(el => {
+      el.onclick = () =>
         openChat(
-          element.dataset.person
+          el.dataset.person
         );
     });
 }
-
-/* =========================================================
-   PERSON ROW
-   ========================================================= */
 
 function personRow(person) {
   return `
     <button
       class="person-row"
-      data-person="${escapeHtml(person.id)}"
+      data-person="${person.id}"
     >
 
       <div class="person-avatar">
@@ -781,94 +607,44 @@ function personRow(person) {
   `;
 }
 
-/* =========================================================
-   OPEN CHAT
-   ========================================================= */
-
 async function openChat(personId) {
   selectedPerson =
     people.find(
-      (person) =>
-        person.id === personId
+      p => p.id === personId
     );
 
   if (!selectedPerson) {
     return;
   }
 
-  messages = [];
-  selectedMedia = null;
+  await loadMessages();
 
   renderChat();
 
-  try {
-    await loadMessages();
-    renderChat();
-    subscribeChat();
-  } catch (error) {
-    console.error(
-      "Open chat error:",
-      error
-    );
-
-    alert(
-      error?.message ||
-        "Could not load this conversation."
-    );
-  }
+  subscribeChat();
 }
-
-/* =========================================================
-   LOAD MESSAGES
-   ========================================================= */
 
 async function loadMessages() {
-  if (
-    !currentUser ||
-    !selectedPerson
-  ) {
-    return;
-  }
-
   const result =
-    await withTimeout(
-      supabase
-        .from("messages")
-        .select(
-          "id,sender_id,receiver_id,message,created_at"
-        )
-        .or(
-          `and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedPerson.id}),and(sender_id.eq.${selectedPerson.id},receiver_id.eq.${currentUser.id})`
-        )
-        .order("created_at", {
-          ascending: true
-        }),
+    await supabaseClient
+      .from("messages")
+      .select(
+        "id,sender_id,receiver_id,message,created_at"
+      )
+      .or(
+        `and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedPerson.id}),and(sender_id.eq.${selectedPerson.id},receiver_id.eq.${currentUser.id})`
+      )
+      .order("created_at", {
+        ascending: true
+      });
 
-      10000,
-
-      "Loading messages timed out."
-    );
-
-  if (result.error) {
-    throw result.error;
+  if (!result.error) {
+    messages =
+      result.data || [];
   }
-
-  messages =
-    result.data || [];
-
-  return messages;
 }
 
-/* =========================================================
-   CHAT
-   ========================================================= */
-
 function renderChat() {
-  if (!selectedPerson) {
-    renderHome();
-    return;
-  }
-
   render(`
     <main class="app-shell chat-shell">
 
@@ -884,7 +660,7 @@ function renderChat() {
         <div class="person-avatar">
           ${escapeHtml(
             selectedPerson.avatar ||
-              "🦁"
+            "🦁"
           )}
         </div>
 
@@ -942,9 +718,7 @@ function renderChat() {
 
       </section>
 
-      <div
-        id="mediaPreview"
-      ></div>
+      <div id="mediaPreview"></div>
 
       <form
         class="composer"
@@ -979,31 +753,19 @@ function renderChat() {
         id="attachSheet"
       >
 
-        <button
-          type="button"
-          id="pickPhoto"
-        >
+        <button id="pickPhoto">
           🖼️ Photos
         </button>
 
-        <button
-          type="button"
-          id="pickVideo"
-        >
+        <button id="pickVideo">
           🎥 Video
         </button>
 
-        <button
-          type="button"
-          id="sendLocation"
-        >
+        <button id="sendLocation">
           📍 Location
         </button>
 
-        <button
-          type="button"
-          id="closeAttach"
-        >
+        <button id="closeAttach">
           Cancel
         </button>
 
@@ -1014,27 +776,27 @@ function renderChat() {
 
   document.getElementById(
     "back"
-  ).onclick = closeChat;
+  ).onclick =
+    closeChat;
 
   document.getElementById(
     "composer"
-  ).onsubmit = sendMessage;
+  ).onsubmit =
+    sendMessage;
 
   document.getElementById(
     "attach"
-  ).onclick = () => {
+  ).onclick = () =>
     document
       .getElementById("attachSheet")
       .classList.remove("hidden");
-  };
 
   document.getElementById(
     "closeAttach"
-  ).onclick = () => {
+  ).onclick = () =>
     document
       .getElementById("attachSheet")
       .classList.add("hidden");
-  };
 
   document.getElementById(
     "pickPhoto"
@@ -1048,14 +810,11 @@ function renderChat() {
 
   document.getElementById(
     "sendLocation"
-  ).onclick = sendLocation;
+  ).onclick =
+    sendLocation;
 
   scrollChat();
 }
-
-/* =========================================================
-   MESSAGE BUBBLE
-   ========================================================= */
 
 function messageBubble(item) {
   const mine =
@@ -1065,7 +824,9 @@ function messageBubble(item) {
   return `
     <div
       class="bubble ${
-        mine ? "mine" : "theirs"
+        mine
+          ? "mine"
+          : "theirs"
       }"
     >
 
@@ -1085,25 +846,17 @@ function messageBubble(item) {
   `;
 }
 
-/* =========================================================
-   SCROLL CHAT
-   ========================================================= */
-
 function scrollChat() {
-  const element =
+  const el =
     document.getElementById(
       "chatMessages"
     );
 
-  if (element) {
-    element.scrollTop =
-      element.scrollHeight;
+  if (el) {
+    el.scrollTop =
+      el.scrollHeight;
   }
 }
-
-/* =========================================================
-   CLOSE CHAT
-   ========================================================= */
 
 function closeChat() {
   unsubscribeChat();
@@ -1115,27 +868,14 @@ function closeChat() {
   renderHome();
 }
 
-/* =========================================================
-   REALTIME CHAT
-   ========================================================= */
-
 function subscribeChat() {
   unsubscribeChat();
 
-  if (
-    !supabase ||
-    !currentUser ||
-    !selectedPerson
-  ) {
-    return;
-  }
-
-  const channelName =
-    `leo-chat-${currentUser.id}-${selectedPerson.id}`;
-
   messageChannel =
-    supabase
-      .channel(channelName)
+    supabaseClient
+      .channel(
+        `leo-chat-${currentUser.id}-${selectedPerson.id}`
+      )
       .on(
         "postgres_changes",
         {
@@ -1143,70 +883,44 @@ function subscribeChat() {
           schema: "public",
           table: "messages"
         },
-        async (payload) => {
+        async payload => {
           if (!selectedPerson) {
             return;
           }
 
-          const message =
+          const m =
             payload.new || {};
 
-          const belongsToChat =
+          if (
             (
-              message.sender_id ===
-                currentUser.id &&
-              message.receiver_id ===
-                selectedPerson.id
+              m.sender_id === currentUser.id &&
+              m.receiver_id === selectedPerson.id
             ) ||
             (
-              message.sender_id ===
-                selectedPerson.id &&
-              message.receiver_id ===
-                currentUser.id
-            );
-
-          if (!belongsToChat) {
-            return;
-          }
-
-          try {
+              m.sender_id === selectedPerson.id &&
+              m.receiver_id === currentUser.id
+            )
+          ) {
             await loadMessages();
 
-            if (selectedPerson) {
-              renderChat();
-              subscribeChat();
-            }
-          } catch (error) {
-            console.error(
-              "Realtime message refresh error:",
-              error
-            );
+            renderChat();
+
+            subscribeChat();
           }
         }
       )
       .subscribe();
 }
 
-/* =========================================================
-   UNSUBSCRIBE
-   ========================================================= */
-
 function unsubscribeChat() {
-  if (
-    messageChannel &&
-    supabase
-  ) {
-    supabase.removeChannel(
+  if (messageChannel) {
+    supabaseClient.removeChannel(
       messageChannel
     );
 
     messageChannel = null;
   }
 }
-
-/* =========================================================
-   SEND MESSAGE
-   ========================================================= */
 
 async function sendMessage(event) {
   event.preventDefault();
@@ -1216,119 +930,91 @@ async function sendMessage(event) {
       "messageInput"
     );
 
-  if (!input) {
-    return;
-  }
-
   const text =
     input.value.trim();
 
-  if (
-    !text &&
-    !selectedMedia
-  ) {
+  if (!text && !selectedMedia) {
     return;
   }
 
-  let outgoing = text;
+  let outgoing =
+    text;
 
   if (
     selectedMedia?.type ===
     "image"
   ) {
-    outgoing = text
-      ? `📷 Photo\n${text}`
-      : "📷 Photo";
+    outgoing =
+      text
+        ? `📷 Photo\n${text}`
+        : "📷 Photo";
   }
 
   if (
     selectedMedia?.type ===
     "video"
   ) {
-    outgoing = text
-      ? `🎥 Video\n${text}`
-      : "🎥 Video";
+    outgoing =
+      text
+        ? `🎥 Video\n${text}`
+        : "🎥 Video";
   }
 
-  try {
-    const result =
-      await withTimeout(
-        supabase
-          .from("messages")
-          .insert({
-            sender_id:
-              currentUser.id,
+  const result =
+    await supabaseClient
+      .from("messages")
+      .insert({
+        sender_id:
+          currentUser.id,
 
-            receiver_id:
-              selectedPerson.id,
+        receiver_id:
+          selectedPerson.id,
 
-            message:
-              outgoing
-          }),
+        message:
+          outgoing
+      });
 
-        10000,
-
-        "Sending the message timed out."
-      );
-
-    if (result.error) {
-      throw result.error;
-    }
-
-    input.value = "";
-
-    selectedMedia = null;
-
-    const preview =
-      document.getElementById(
-        "mediaPreview"
-      );
-
-    if (preview) {
-      preview.innerHTML = "";
-    }
-
-    await loadMessages();
-
-    renderChat();
-    subscribeChat();
-  } catch (error) {
-    console.error(
-      "Send message error:",
-      error
-    );
-
+  if (result.error) {
     alert(
-      error?.message ||
-        "Could not send the message."
+      result.error.message
     );
+
+    return;
   }
+
+  input.value = "";
+
+  selectedMedia = null;
+
+  document.getElementById(
+    "mediaPreview"
+  ).innerHTML = "";
+
+  await loadMessages();
+
+  renderChat();
+
+  subscribeChat();
 }
 
-/* =========================================================
-   PICK MEDIA
-   ========================================================= */
-
 function pickMedia(accept) {
-  const sheet =
-    document.getElementById(
-      "attachSheet"
-    );
-
-  if (sheet) {
-    sheet.classList.add(
-      "hidden"
-    );
-  }
+  document.getElementById(
+    "attachSheet"
+  ).classList.add("hidden");
 
   const input =
     document.createElement(
       "input"
     );
 
-  input.type = "file";
-  input.accept = accept;
-  input.multiple = false;
+  input.type =
+    "file";
+
+  input.accept =
+    accept;
+
+  input.multiple =
+    false;
 
   input.onchange = () => {
     const file =
@@ -1339,25 +1025,19 @@ function pickMedia(accept) {
     }
 
     selectedMedia = {
-      type: file.type.startsWith(
-        "video/"
-      )
-        ? "video"
-        : "image",
+      type:
+        file.type.startsWith(
+          "video/"
+        )
+          ? "video"
+          : "image",
 
       file
     };
 
-    const preview =
-      document.getElementById(
-        "mediaPreview"
-      );
-
-    if (!preview) {
-      return;
-    }
-
-    preview.innerHTML = `
+    document.getElementById(
+      "mediaPreview"
+    ).innerHTML = `
       <div class="media-preview">
 
         <span>
@@ -1384,74 +1064,46 @@ function pickMedia(accept) {
     ).onclick = () => {
       selectedMedia = null;
 
-      preview.innerHTML = "";
+      document.getElementById(
+        "mediaPreview"
+      ).innerHTML = "";
     };
   };
 
   input.click();
 }
 
-/* =========================================================
-   SEND LOCATION
-   ========================================================= */
-
 async function sendLocation() {
-  const sheet =
-    document.getElementById(
-      "attachSheet"
+  document.getElementById(
+    "attachSheet"
+  ).classList.add("hidden");
+
+  const result =
+    await supabaseClient
+      .from("messages")
+      .insert({
+        sender_id:
+          currentUser.id,
+
+        receiver_id:
+          selectedPerson.id,
+
+        message:
+          "📍 Location"
+      });
+
+  if (result.error) {
+    alert(
+      result.error.message
     );
-
-  if (sheet) {
-    sheet.classList.add(
-      "hidden"
-    );
-  }
-
-  try {
-    const result =
-      await withTimeout(
-        supabase
-          .from("messages")
-          .insert({
-            sender_id:
-              currentUser.id,
-
-            receiver_id:
-              selectedPerson.id,
-
-            message:
-              "📍 Location"
-          }),
-
-        10000,
-
-        "Sending the location message timed out."
-      );
-
-    if (result.error) {
-      throw result.error;
-    }
-
+  } else {
     await loadMessages();
 
     renderChat();
-    subscribeChat();
-  } catch (error) {
-    console.error(
-      "Location message error:",
-      error
-    );
 
-    alert(
-      error?.message ||
-        "Could not send location."
-    );
+    subscribeChat();
   }
 }
-
-/* =========================================================
-   SETTINGS
-   ========================================================= */
 
 function renderSettings() {
   render(`
@@ -1477,7 +1129,7 @@ function renderSettings() {
             <small>
               ${escapeHtml(
                 currentProfile?.display_name ||
-                  ""
+                ""
               )}
             </small>
           </span>
@@ -1582,33 +1234,16 @@ function renderSettings() {
 
   document.getElementById(
     "logout"
-  ).onclick = logout;
+  ).onclick =
+    logout;
 }
 
-/* =========================================================
-   LOGOUT
-   ========================================================= */
-
 async function logout() {
-  try {
-    await withTimeout(
-      supabase.auth.signOut(),
-      10000,
-      "Logout request timed out."
-    );
-  } catch (error) {
-    console.error(
-      "Logout error:",
-      error
-    );
-  }
+  await supabaseClient.auth.signOut();
 
   currentUser = null;
   currentProfile = null;
   people = [];
-  selectedPerson = null;
-  messages = [];
-  selectedMedia = null;
 
   unsubscribeChat();
 
@@ -1623,10 +1258,6 @@ async function logout() {
   renderWelcome();
 }
 
-/* =========================================================
-   PLACEHOLDER MODULES
-   ========================================================= */
-
 function renderPlaceholder(
   title,
   icon
@@ -1636,9 +1267,7 @@ function renderPlaceholder(
 
       <header class="simple-header">
         <h1>
-          ${icon} ${escapeHtml(
-            title
-          )}
+          ${icon} ${title}
         </h1>
       </header>
 
@@ -1649,9 +1278,7 @@ function renderPlaceholder(
         </div>
 
         <h2>
-          Leo ${escapeHtml(
-            title
-          )}
+          Leo ${title}
         </h2>
 
         <p>
@@ -1697,10 +1324,6 @@ function renderPlaceholder(
   `);
 }
 
-/* =========================================================
-   PEOPLE REFRESH
-   ========================================================= */
-
 function startPeopleRefresh() {
   if (peopleTimer) {
     clearInterval(
@@ -1718,60 +1341,18 @@ function startPeopleRefresh() {
           return;
         }
 
-        try {
-          await loadPeople();
-        } catch (error) {
-          console.error(
-            "People refresh error:",
-            error
-          );
-        }
+        await loadPeople();
       },
       10000
     );
 }
 
-/* =========================================================
-   GLOBAL ERROR HANDLERS
-   ========================================================= */
-
-window.addEventListener(
-  "error",
-  (event) => {
-    console.error(
-      "Global JavaScript error:",
-      event.error || event.message
-    );
-
-    showStartupError(
-      "Leo Chat could not start",
-      event.message ||
-        "A JavaScript error prevented Leo Chat from starting."
-    );
-  }
-);
-
-window.addEventListener(
-  "unhandledrejection",
-  (event) => {
-    console.error(
-      "Unhandled promise rejection:",
-      event.reason
-    );
-
-    showStartupError(
-      "Leo Chat could not start",
-      event.reason?.message ||
-        String(
-          event.reason ||
-            "An unexpected error occurred."
-        )
-    );
-  }
-);
-
-/* =========================================================
-   START
-   ========================================================= */
-
 boot();
+
+if (
+  "serviceWorker" in navigator
+) {
+  navigator.serviceWorker
+    .register("./sw.js")
+    .catch(() => {});
+}
