@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
 
@@ -8,7 +9,10 @@
     content="width=device-width, initial-scale=1, viewport-fit=cover"
   >
 
-  <meta name="theme-color" content="#050505">
+  <meta
+    name="theme-color"
+    content="#050505"
+  >
 
   <meta
     name="apple-mobile-web-app-capable"
@@ -42,7 +46,7 @@
 
   <link
     rel="stylesheet"
-    href="./styles.css?v=5"
+    href="./styles.css?v=6"
   >
 
   <title>Leo Chat</title>
@@ -50,11 +54,43 @@
 
 <body>
 
+  <!-- =====================================================
+       JAVASCRIPT TEST
+       ===================================================== -->
+
+  <script>
+    document.body.innerHTML = `
+      <div style="
+        background:#050505;
+        color:#D4AF37;
+        min-height:100vh;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-family:Arial,sans-serif;
+        font-size:24px;
+        text-align:center;
+        padding:20px;
+      ">
+        🦁 LEO JAVASCRIPT TEST WORKS
+      </div>
+    `;
+  </script>
+
+  <!-- =====================================================
+       LEO CHAT APP CONTAINER
+       ===================================================== -->
+
   <div id="app">
     <main class="screen center">
-      <div class="brand">🦁</div>
 
-      <h1>Leo Chat</h1>
+      <div class="brand">
+        🦁
+      </div>
+
+      <h1>
+        Leo Chat
+      </h1>
 
       <p class="tagline">
         Chat. Connect. Roar.
@@ -63,51 +99,107 @@
       <p class="muted">
         Starting Leo Chat...
       </p>
+
     </main>
   </div>
 
-  <!-- SUPABASE -->
+  <!-- =====================================================
+       SUPABASE
+       ===================================================== -->
+
   <script
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+    crossorigin="anonymous"
     onload="window.LEO_SUPABASE_LOADED=true"
-    onerror="document.getElementById('app').innerHTML='<main class=&quot;screen center&quot;><h1>🦁 Leo Chat</h1><p>Supabase library failed to load.</p></main>'">
-  </script>
+    onerror="
+      document.getElementById('app').innerHTML =
+      '<main class=&quot;screen center&quot;><h1>🦁 Leo Chat</h1><p>Supabase library failed to load.</p></main>'
+    "
+  ></script>
 
-  <!-- CONFIG -->
+  <!-- =====================================================
+       CONFIG
+       ===================================================== -->
+
   <script
-    src="./config.js?v=5"
+    src="./config.js?v=6"
     onload="window.LEO_CONFIG_LOADED=true"
-    onerror="document.getElementById('app').innerHTML='<main class=&quot;screen center&quot;><h1>🦁 Leo Chat</h1><p>config.js failed to load.</p></main>'">
-  </script>
+    onerror="
+      document.getElementById('app').innerHTML =
+      '<main class=&quot;screen center&quot;><h1>🦁 Leo Chat</h1><p>config.js failed to load.</p></main>'
+    "
+  ></script>
 
-  <!-- APP -->
+  <!-- =====================================================
+       APPLICATION
+       ===================================================== -->
+
   <script
-    src="./app.js?v=5"
+    src="./app.js?v=6"
     onload="window.LEO_APP_LOADED=true"
-    onerror="document.getElementById('app').innerHTML='<main class=&quot;screen center&quot;><h1>🦁 Leo Chat</h1><p>app.js failed to load.</p></main>'">
-  </script>
+    onerror="
+      document.getElementById('app').innerHTML =
+      '<main class=&quot;screen center&quot;><h1>🦁 Leo Chat</h1><p>app.js failed to load.</p></main>'
+    "
+  ></script>
 
-  <!-- STARTUP DIAGNOSTIC -->
+  <!-- =====================================================
+       STARTUP DIAGNOSTIC
+       ===================================================== -->
+
   <script>
+
     setTimeout(function () {
+
       if (window.LEO_APP_LOADED) {
         return;
       }
 
       document.getElementById("app").innerHTML = `
+
         <main class="screen center">
-          <div class="brand">🦁</div>
-          <h1>Leo Chat</h1>
-          <div class="card error-card">
-            <h2>Leo Chat startup stopped</h2>
-            <p>App.js did not finish loading.</p>
-            <p>Supabase loaded: ${window.LEO_SUPABASE_LOADED ? "YES" : "NO"}</p>
-            <p>Config loaded: ${window.LEO_CONFIG_LOADED ? "YES" : "NO"}</p>
-            <p>App loaded: ${window.LEO_APP_LOADED ? "YES" : "NO"}</p>
+
+          <div class="brand">
+            🦁
           </div>
+
+          <h1>
+            Leo Chat
+          </h1>
+
+          <div class="card error-card">
+
+            <h2>
+              Leo Chat startup stopped
+            </h2>
+
+            <p>
+              App.js did not finish loading.
+            </p>
+
+            <p>
+              Supabase loaded:
+              ${window.LEO_SUPABASE_LOADED ? "YES" : "NO"}
+            </p>
+
+            <p>
+              Config loaded:
+              ${window.LEO_CONFIG_LOADED ? "YES" : "NO"}
+            </p>
+
+            <p>
+              App loaded:
+              ${window.LEO_APP_LOADED ? "YES" : "NO"}
+            </p>
+
+          </div>
+
         </main>
+
       `;
+
     }, 5000);
+
   </script>
 
 </body>
