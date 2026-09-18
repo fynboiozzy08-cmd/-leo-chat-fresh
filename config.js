@@ -6,5 +6,5 @@
 */
 window.LEO_CONFIG = {
   SUPABASE_URL: "https://odpmhwmnzetqgniplted.supabase.co",
-  SUPABASE_KEY: "PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE"
+  SUPABASE_KEY: "sb_publishable_92LU7ZNyugh6GfjtVhsPLg_FlvOMxaq"
 };
