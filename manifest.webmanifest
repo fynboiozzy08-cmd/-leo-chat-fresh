@@ -1,0 +1,17 @@
+{
+  "name": "Leo Chat",
+  "short_name": "Leo Chat",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "description": "Leo Chat — Chat. Connect. Roar.",
+  "icons": [
+    {
+      "src": "./logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
