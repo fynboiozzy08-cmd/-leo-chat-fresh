@@ -59,14 +59,21 @@ async function boot() {
 
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const { data } = await supabase.auth.getSession();
-  currentUser = data.session?.user || null;
+    // Never leave the user stuck on Loading if the browser cannot
+    // complete the Supabase session check.
+    const sessionCheck = supabase.auth.getSession();
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Supabase session check timed out. The page loaded, but the connection to Supabase did not respond.")), 10000)
+    );
 
-  if (currentUser) {
-    await enterApp();
-  } else {
-    renderWelcome();
-  }
+    const { data } = await Promise.race([sessionCheck, timeout]);
+    currentUser = data?.session?.user || null;
+
+    if (currentUser) {
+      await enterApp();
+    } else {
+      renderWelcome();
+    }
   } catch (e) {
     render(`<main class="screen center"><div class="brand">🦁</div><h1>Leo Chat</h1><div class="card error-card"><h2>Startup error</h2><p>${escapeHtml(e?.message || String(e))}</p><button class="outline" onclick="location.reload()">Reload Leo Chat</button></div></main>`);
   }
