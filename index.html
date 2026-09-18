@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
 
@@ -31,7 +32,7 @@
 
   <link
     rel="stylesheet"
-    href="./styles.css?v=8"
+    href="./styles.css?v=9"
   >
 
   <title>Leo Chat</title>
@@ -40,6 +41,7 @@
 <body>
 
   <div id="app">
+
     <main class="screen center">
 
       <div class="brand">🦁</div>
@@ -55,28 +57,97 @@
       </p>
 
     </main>
+
   </div>
 
   <script>
-    (function () {
 
-      var app = document.getElementById("app");
-      var status = document.getElementById("status");
+    /*
+     * Catch JavaScript errors BEFORE app.js loads.
+     */
 
-      function setStatus(text) {
-        if (status) {
-          status.textContent = text;
-        }
-      }
+    window.addEventListener("error", function(event) {
 
-      function showError(title, details) {
+      var app =
+        document.getElementById("app");
+
+      if (!app) return;
+
+      var message =
+        event.message ||
+        "Unknown JavaScript error.";
+
+      app.innerHTML = `
+
+        <main class="screen center">
+
+          <div class="brand">
+            🦁
+          </div>
+
+          <h1>
+            Leo Chat
+          </h1>
+
+          <p class="tagline">
+            Chat. Connect. Roar.
+          </p>
+
+          <div class="card error-card">
+
+            <h2>
+              JavaScript Error
+            </h2>
+
+            <p>
+              ${message}
+            </p>
+
+            <p>
+              Line:
+              ${event.lineno || "unknown"}
+            </p>
+
+            <p>
+              File:
+              ${event.filename || "unknown"}
+            </p>
+
+          </div>
+
+        </main>
+
+      `;
+
+    });
+
+    window.addEventListener(
+      "unhandledrejection",
+      function(event) {
+
+        var app =
+          document.getElementById("app");
+
+        if (!app) return;
+
+        var reason =
+          event.reason?.message ||
+          String(
+            event.reason ||
+            "Unknown promise error."
+          );
 
         app.innerHTML = `
+
           <main class="screen center">
 
-            <div class="brand">🦁</div>
+            <div class="brand">
+              🦁
+            </div>
 
-            <h1>Leo Chat</h1>
+            <h1>
+              Leo Chat
+            </h1>
 
             <p class="tagline">
               Chat. Connect. Roar.
@@ -84,132 +155,117 @@
 
             <div class="card error-card">
 
-              <h2>${title}</h2>
+              <h2>
+                Startup Error
+              </h2>
 
-              <p>${details}</p>
-
-              <button
-                class="outline"
-                onclick="location.reload()"
-              >
-                Reload Leo Chat
-              </button>
+              <p>
+                ${reason}
+              </p>
 
             </div>
 
           </main>
+
         `;
-      }
-
-      function loadScript(src, name) {
-
-        return new Promise(function(resolve, reject) {
-
-          setStatus("Loading " + name + "...");
-
-          var script =
-            document.createElement("script");
-
-          script.src = src;
-
-          script.onload = function() {
-            resolve();
-          };
-
-          script.onerror = function() {
-            reject(
-              new Error(
-                name + " failed to load."
-              )
-            );
-          };
-
-          document.body.appendChild(script);
-
-        });
 
       }
+    );
 
-      async function start() {
+  </script>
 
-        try {
 
-          /*
-           * STEP 1
-           * Load Supabase first.
-           */
+  <!-- =====================================================
+       SUPABASE
+       ===================================================== -->
 
-          await loadScript(
-            "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
-            "Supabase"
-          );
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+    crossorigin="anonymous"
+  ></script>
 
-          if (
-            !window.supabase ||
-            typeof window.supabase.createClient !== "function"
-          ) {
-            throw new Error(
-              "Supabase loaded, but createClient was not found."
-            );
-          }
 
-          /*
-           * STEP 2
-           * Load Leo configuration.
-           */
+  <!-- =====================================================
+       CONFIG
+       ===================================================== -->
 
-          await loadScript(
-            "./config.js?v=8",
-            "Leo configuration"
-          );
+  <script
+    src="./config.js?v=9"
+  ></script>
 
-          if (
-            !window.LEO_CONFIG ||
-            !window.LEO_CONFIG.SUPABASE_URL ||
-            !window.LEO_CONFIG.SUPABASE_KEY
-          ) {
-            throw new Error(
-              "Leo configuration was loaded, but the Supabase settings were not found."
-            );
-          }
 
-          /*
-           * STEP 3
-           * Load the actual Leo Chat application.
-           */
+  <!-- =====================================================
+       LEO CHAT
+       ===================================================== -->
 
-          await loadScript(
-            "./app.js?v=8",
-            "Leo Chat application"
-          );
+  <script
+    src="./app.js?v=9"
+  ></script>
 
-          /*
-           * If app.js loaded successfully,
-           * its boot() function should take over.
-           */
 
-          setStatus("Leo Chat loaded.");
+  <!-- =====================================================
+       LOADER STATUS
+       ===================================================== -->
 
-        } catch (error) {
+  <script>
 
-          console.error(
-            "Leo Chat loader error:",
-            error
-          );
+    setTimeout(function() {
 
-          showError(
-            "Leo Chat could not start",
-            error.message ||
-              "A startup file failed to load."
-          );
+      var app =
+        document.getElementById("app");
 
-        }
+      /*
+       * If boot() never replaced the loader,
+       * show a useful diagnostic.
+       */
+
+      if (
+        app &&
+        app.innerText.includes(
+          "Starting Leo Chat"
+        )
+      ) {
+
+        app.innerHTML = `
+
+          <main class="screen center">
+
+            <div class="brand">
+              🦁
+            </div>
+
+            <h1>
+              Leo Chat
+            </h1>
+
+            <p class="tagline">
+              Chat. Connect. Roar.
+            </p>
+
+            <div class="card error-card">
+
+              <h2>
+                Leo Chat stopped starting
+              </h2>
+
+              <p>
+                The app.js file loaded, but Leo Chat did not start.
+              </p>
+
+              <p>
+                This usually means an error occurred while executing app.js.
+              </p>
+
+            </div>
+
+          </main>
+
+        `;
 
       }
 
-      start();
+    }, 5000);
 
-    })();
   </script>
 
 </body>
