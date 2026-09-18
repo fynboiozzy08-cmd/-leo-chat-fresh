@@ -12,3 +12,6 @@ LEO CHAT — FRESH WEB VERSION
 This build uses the existing public.profiles and public.messages tables.
 Media selection is local and currently sends a message label; cloud media storage is a later module.
 Voice/video buttons are placeholders for the calling module.
+
+
+FRESH WEB v2: startup diagnostics and cache-safe asset loading added. Service worker registration is disabled until the app is stable.

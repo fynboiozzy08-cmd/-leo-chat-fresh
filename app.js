@@ -46,12 +46,18 @@ function showConfigError() {
 }
 
 async function boot() {
-  if (!configured()) {
-    showConfigError();
-    return;
-  }
+  try {
+    if (!configured()) {
+      showConfigError();
+      return;
+    }
 
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    if (!window.supabase || typeof window.supabase.createClient !== "function") {
+      render(`<main class="screen center"><div class="brand">🦁</div><h1>Leo Chat</h1><div class="card error-card"><h2>Leo Chat could not start</h2><p>The Supabase web library did not load.</p><p class="muted small">Refresh this page. If it still happens, check that JavaScript/CDN access is enabled.</p></div></main>`);
+      return;
+    }
+
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const { data } = await supabase.auth.getSession();
   currentUser = data.session?.user || null;
@@ -60,6 +66,9 @@ async function boot() {
     await enterApp();
   } else {
     renderWelcome();
+  }
+  } catch (e) {
+    render(`<main class="screen center"><div class="brand">🦁</div><h1>Leo Chat</h1><div class="card error-card"><h2>Startup error</h2><p>${escapeHtml(e?.message || String(e))}</p><button class="outline" onclick="location.reload()">Reload Leo Chat</button></div></main>`);
   }
 }
 
@@ -544,6 +553,15 @@ function startPeopleRefresh() {
 }
 
 
+window.addEventListener("error", (event) => {
+  if (!app || app.innerHTML.trim()) return;
+  render(`<main class="screen center"><div class="brand">🦁</div><h1>Leo Chat</h1><div class="card error-card"><h2>Leo Chat could not start</h2><p>${escapeHtml(event.message || "JavaScript error")}</p><button class="outline" onclick="location.reload()">Reload Leo Chat</button></div></main>`);
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  if (!app || app.innerHTML.trim()) return;
+  render(`<main class="screen center"><div class="brand">🦁</div><h1>Leo Chat</h1><div class="card error-card"><h2>Leo Chat could not start</h2><p>${escapeHtml(event.reason?.message || String(event.reason || "Unknown error"))}</p><button class="outline" onclick="location.reload()">Reload Leo Chat</button></div></main>`);
+});
+
 boot();
 
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
