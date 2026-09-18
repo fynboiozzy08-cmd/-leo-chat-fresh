@@ -46,40 +46,13 @@
 
   <link
     rel="stylesheet"
-    href="./styles.css?v=6"
+    href="./styles.css?v=7"
   >
 
   <title>Leo Chat</title>
 </head>
 
 <body>
-
-  <!-- =====================================================
-       JAVASCRIPT TEST
-       ===================================================== -->
-
-  <script>
-    document.body.innerHTML = `
-      <div style="
-        background:#050505;
-        color:#D4AF37;
-        min-height:100vh;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        font-family:Arial,sans-serif;
-        font-size:24px;
-        text-align:center;
-        padding:20px;
-      ">
-        🦁 LEO JAVASCRIPT TEST WORKS
-      </div>
-    `;
-  </script>
-
-  <!-- =====================================================
-       LEO CHAT APP CONTAINER
-       ===================================================== -->
 
   <div id="app">
     <main class="screen center">
@@ -110,37 +83,28 @@
   <script
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
     crossorigin="anonymous"
-    onload="window.LEO_SUPABASE_LOADED=true"
-    onerror="
-      document.getElementById('app').innerHTML =
-      '<main class=&quot;screen center&quot;><h1>🦁 Leo Chat</h1><p>Supabase library failed to load.</p></main>'
-    "
+    onload="window.LEO_SUPABASE_LOADED = true"
+    onerror="window.LEO_SUPABASE_FAILED = true"
   ></script>
 
   <!-- =====================================================
-       CONFIG
+       LEO CONFIG
        ===================================================== -->
 
   <script
-    src="./config.js?v=6"
-    onload="window.LEO_CONFIG_LOADED=true"
-    onerror="
-      document.getElementById('app').innerHTML =
-      '<main class=&quot;screen center&quot;><h1>🦁 Leo Chat</h1><p>config.js failed to load.</p></main>'
-    "
+    src="./config.js?v=7"
+    onload="window.LEO_CONFIG_LOADED = true"
+    onerror="window.LEO_CONFIG_FAILED = true"
   ></script>
 
   <!-- =====================================================
-       APPLICATION
+       LEO APPLICATION
        ===================================================== -->
 
   <script
-    src="./app.js?v=6"
-    onload="window.LEO_APP_LOADED=true"
-    onerror="
-      document.getElementById('app').innerHTML =
-      '<main class=&quot;screen center&quot;><h1>🦁 Leo Chat</h1><p>app.js failed to load.</p></main>'
-    "
+    src="./app.js?v=7"
+    onload="window.LEO_APP_LOADED = true"
+    onerror="window.LEO_APP_FAILED = true"
   ></script>
 
   <!-- =====================================================
@@ -148,15 +112,44 @@
        ===================================================== -->
 
   <script>
-
     setTimeout(function () {
 
       if (window.LEO_APP_LOADED) {
         return;
       }
 
-      document.getElementById("app").innerHTML = `
+      var app = document.getElementById("app");
 
+      if (!app) {
+        return;
+      }
+
+      var supabaseStatus =
+        window.LEO_SUPABASE_LOADED
+          ? "YES"
+          : "NO";
+
+      var configStatus =
+        window.LEO_CONFIG_LOADED
+          ? "YES"
+          : "NO";
+
+      var appStatus =
+        window.LEO_APP_LOADED
+          ? "YES"
+          : "NO";
+
+      var message =
+        "Supabase library loaded: " +
+        supabaseStatus +
+        "\\n\\n" +
+        "Config loaded: " +
+        configStatus +
+        "\\n\\n" +
+        "App loaded: " +
+        appStatus;
+
+      app.innerHTML = `
         <main class="screen center">
 
           <div class="brand">
@@ -167,39 +160,33 @@
             Leo Chat
           </h1>
 
+          <p class="tagline">
+            Chat. Connect. Roar.
+          </p>
+
           <div class="card error-card">
 
             <h2>
               Leo Chat startup stopped
             </h2>
 
-            <p>
-              App.js did not finish loading.
+            <p style="white-space: pre-line;">
+              ${message}
             </p>
 
-            <p>
-              Supabase loaded:
-              ${window.LEO_SUPABASE_LOADED ? "YES" : "NO"}
-            </p>
-
-            <p>
-              Config loaded:
-              ${window.LEO_CONFIG_LOADED ? "YES" : "NO"}
-            </p>
-
-            <p>
-              App loaded:
-              ${window.LEO_APP_LOADED ? "YES" : "NO"}
-            </p>
+            <button
+              class="outline"
+              onclick="location.reload()"
+            >
+              Reload Leo Chat
+            </button>
 
           </div>
 
         </main>
-
       `;
 
     }, 5000);
-
   </script>
 
 </body>
