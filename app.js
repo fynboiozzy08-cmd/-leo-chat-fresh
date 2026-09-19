@@ -1,5 +1,3 @@
-alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT + SEARCH FIX");
-
 (() => {
   /* =========================================================
      LEO CHAT — WEB APP
@@ -98,24 +96,9 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT + SEARCH FIX");
     )
   };
 
-  /*
-    Current message being typed.
-  */
   let messageDraft = "";
-
-  /*
-    Current search text.
-  */
   let searchDraft = "";
-
-  /*
-    Prevent stale async chat renders.
-  */
   let chatRenderToken = 0;
-
-  /*
-    Prevent duplicate message sending.
-  */
   let sendingMessage = false;
 
   let poll = null;
@@ -475,10 +458,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT + SEARCH FIX");
               };
             });
 
-            /*
-              Search is safe now because renderSearch()
-              no longer destroys #q.
-            */
             if (
               state.screen === "home" ||
               state.screen === "search"
@@ -578,31 +557,18 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT + SEARCH FIX");
         await ensurePresence();
         await loadPresence();
 
-        /*
-          HOME:
-          Re-render is okay because there is no
-          typing field that needs protection.
-        */
         if (
           state.screen === "home"
         ) {
           render();
         }
 
-        /*
-          SEARCH:
-          renderSearch() now preserves #q.
-        */
         if (
           state.screen === "search"
         ) {
           render();
         }
 
-        /*
-          CHAT:
-          Never rebuild chat.
-        */
         if (
           state.screen === "chat" &&
           state.chat
@@ -988,10 +954,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT + SEARCH FIX");
         "Attachment sent successfully."
       );
 
-      /*
-        IMPORTANT:
-        Never call renderChat().
-      */
       await getMessages();
       await updateChatMessages();
       await updatePresenceActivity();
@@ -1458,10 +1420,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT + SEARCH FIX");
         ) {
           await loadPresence();
 
-          /*
-            renderSearch() now preserves
-            the search input.
-          */
           render();
         }
 
@@ -1607,9 +1565,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT + SEARCH FIX");
       return;
     }
 
-    /*
-      Save search text before leaving search.
-    */
     if (
       state.screen === "search"
     ) {
@@ -1623,10 +1578,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT + SEARCH FIX");
       chatRenderToken++;
     }
 
-    /*
-      Clear search only when intentionally
-      leaving the search section.
-    */
     if (screen !== "search") {
       searchDraft = "";
     }
@@ -2270,10 +2221,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT + SEARCH FIX");
 
   /* =========================================================
      SEARCH
-     
-     IMPORTANT:
-     The search shell is created only once.
-     Polling updates only #results.
      ========================================================= */
 
   function renderSearch() {
@@ -2285,10 +2232,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT + SEARCH FIX");
     const existingInput =
       document.getElementById("q");
 
-    /*
-      If search already exists, NEVER rebuild it.
-      This keeps the user's typed text alive.
-    */
     if (
       existingSearch &&
       existingInput &&
@@ -2347,9 +2290,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT + SEARCH FIX");
   }
 
   async function filterPeople() {
-    /*
-      Do NOT destroy the search input.
-    */
     captureSearchDraft();
 
     await Promise.all([
@@ -2357,10 +2297,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT + SEARCH FIX");
       loadPresence()
     ]);
 
-    /*
-      Make sure user has not left search while
-      async database requests were running.
-    */
     if (
       state.screen !== "search"
     ) {
@@ -2463,10 +2399,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT + SEARCH FIX");
         </div>
       `;
 
-    /*
-      Restore the exact text after async loading.
-      This protects against any accidental DOM changes.
-    */
     restoreSearchDraft();
   }
 
@@ -2482,10 +2414,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT + SEARCH FIX");
       return renderHome();
     }
 
-    /*
-      If chat already exists for this person,
-      NEVER rebuild it.
-    */
     const existingChat =
       document.querySelector(
         ".chat"
