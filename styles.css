@@ -1,8 +1,11 @@
 /* =========================================================
-   LEO CHAT — PREMIUM MOBILE UI
-   Black + Gold
-   Clean Icon System
-   iPhone / Mobile Optimized
+   LEO CHAT
+   Complete Mobile styles.css
+   Black + Gold Premium Design
+   ========================================================= */
+
+/* =========================================================
+   RESET
    ========================================================= */
 
 * {
@@ -10,7 +13,14 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html,
+html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  background: #050505;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -18,6 +28,7 @@ body {
   min-height: 100%;
   background: #050505;
   color: #ffffff;
+
   font-family:
     -apple-system,
     BlinkMacSystemFont,
@@ -26,36 +37,51 @@ body {
     "Helvetica Neue",
     Arial,
     sans-serif;
-}
 
-body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+
   overflow-x: hidden;
 }
 
 button,
 input,
-textarea {
-  font-family: inherit;
+textarea,
+select {
+  font: inherit;
 }
 
 button {
   cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
-button:disabled {
-  opacity: 0.55;
-  cursor: default;
+img {
+  display: block;
+  max-width: 100%;
 }
 
+a {
+  color: inherit;
+  text-decoration: none;
+}
 
 /* =========================================================
    MAIN APP
    ========================================================= */
 
-.app {
+#app {
+  width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
+  background: #050505;
+}
+
+.app {
   width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   background: #050505;
 }
 
@@ -65,31 +91,53 @@ button:disabled {
   min-height: 100vh;
   min-height: 100dvh;
   margin: 0 auto;
-  background: #050505;
   position: relative;
-  overflow-x: hidden;
+  background: #050505;
 }
-
-
-/* =========================================================
-   SCREENS
-   ========================================================= */
 
 .screen {
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
-  background: #050505;
-  padding-bottom: 92px;
+
+  padding-bottom:
+    calc(88px + env(safe-area-inset-bottom));
 }
 
-.screen.center {
+/* =========================================================
+   CENTER / WELCOME
+   ========================================================= */
+
+.center {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+
+  text-align: center;
+
+  padding:
+    30px
+    22px
+    calc(110px + env(safe-area-inset-bottom));
 }
 
+.center .logo {
+  margin-bottom: 16px;
+}
+
+.center h1 {
+  margin-bottom: 7px;
+}
+
+.center p {
+  max-width: 320px;
+  margin: 0 auto 24px;
+
+  color: #777;
+  font-size: 14px;
+  line-height: 1.5;
+}
 
 /* =========================================================
    LOGO / BRAND
@@ -98,173 +146,168 @@ button:disabled {
 .logo {
   width: 72px;
   height: 72px;
+
   object-fit: contain;
-  display: block;
-  margin: 0 auto 14px;
+
+  margin: 0 auto 12px;
 }
 
 .brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
   color: #d4af37;
 
   font-size: 21px;
-  line-height: 1.2;
+  line-height: 1.1;
+
   font-weight: 800;
-
-  letter-spacing: -0.3px;
+  letter-spacing: -0.4px;
 }
-
-.brand img {
-  width: 30px;
-  height: 30px;
-  object-fit: contain;
-}
-
-.brand span {
-  display: inline-flex;
-  align-items: center;
-}
-
-
-/* =========================================================
-   PREMIUM BRAND ICON
-   ========================================================= */
-
-.brand-icon {
-  width: 32px;
-  height: 32px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  position: relative;
-
-  color: #d4af37;
-}
-
-.brand-icon::before {
-  content: "";
-
-  width: 22px;
-  height: 22px;
-
-  border: 2px solid #d4af37;
-  border-radius: 50%;
-
-  box-shadow:
-    0 0 8px rgba(212, 175, 55, 0.16);
-}
-
 
 /* =========================================================
    HEADINGS
    ========================================================= */
 
-h1 {
-  margin: 8px 0 6px;
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
 
+h1 {
   color: #d4af37;
 
   font-size: clamp(30px, 8vw, 40px);
   line-height: 1.05;
 
   font-weight: 800;
+  letter-spacing: -1.2px;
 
-  letter-spacing: -1px;
-
-  text-align: center;
+  margin-bottom: 9px;
 }
 
 h2 {
-  margin: 8px 0 10px;
-
   color: #d4af37;
 
   font-size: clamp(24px, 6vw, 30px);
-  line-height: 1.15;
+  line-height: 1.1;
 
   font-weight: 800;
+  letter-spacing: -0.7px;
 
-  letter-spacing: -0.5px;
-
-  text-align: center;
+  margin-bottom: 12px;
 }
 
 h3 {
-  margin: 22px 2px 12px;
-
   color: #ffffff;
 
   font-size: 18px;
   line-height: 1.2;
 
   font-weight: 750;
+
+  margin-bottom: 8px;
 }
-
-p {
-  line-height: 1.5;
-}
-
-.muted {
-  color: #858585;
-
-  font-size: 14px;
-  line-height: 1.5;
-}
-
 
 /* =========================================================
    TOP HEADER
    ========================================================= */
 
 .top {
-  min-height: 76px;
+  width: 100%;
 
   padding:
-    max(18px, env(safe-area-inset-top))
-    18px
+    calc(17px + env(safe-area-inset-top))
+    17px
     14px;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
 
+  background: #070707;
+
   border-bottom: 1px solid #191919;
 
-  background: #080808;
-
-  position: sticky;
-  top: 0;
-
-  z-index: 20;
+  position: relative;
+  z-index: 10;
 }
 
-.top .brand {
-  max-width: calc(100% - 55px);
+.top-left {
+  min-width: 0;
 }
 
+.top-title {
+  color: #d4af37;
+
+  font-size: 22px;
+  line-height: 1.1;
+
+  font-weight: 800;
+  letter-spacing: -0.5px;
+
+  white-space: nowrap;
+}
+
+.top-subtitle {
+  color: #777;
+
+  font-size: 12px;
+  line-height: 1.2;
+
+  margin-top: 5px;
+
+  white-space: nowrap;
+}
+
+.top-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
 /* =========================================================
-   TOP HEADER ICON
+   HEADER / ACTION ICONS
    ========================================================= */
 
-.top .brand-icon {
-  width: 34px;
-  height: 34px;
-  flex-shrink: 0;
+.header-icon,
+.action-icon {
+  width: 40px;
+  height: 40px;
+
+  border-radius: 12px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #d4af37;
+
+  background:
+    linear-gradient(
+      145deg,
+      #151515,
+      #090909
+    );
+
+  border: 1px solid #252525;
+
+  font-size: 19px;
+  line-height: 1;
+
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
 }
 
-.top .brand-icon::before {
-  width: 23px;
-  height: 23px;
-
-  border-width: 2px;
+.header-icon:active,
+.action-icon:active {
+  transform: scale(0.93);
+  background: #181818;
 }
-
 
 /* =========================================================
    CONTENT
@@ -272,152 +315,332 @@ p {
 
 .content {
   width: 100%;
-
-  padding:
-    14px
-    16px
-    110px;
+  padding: 17px 16px 20px;
 }
-
-.content > * {
-  max-width: 100%;
-}
-
-
-/* =========================================================
-   CARDS
-   ========================================================= */
 
 .card {
   width: 100%;
 
   background: #0d0d0d;
 
-  border: 1px solid #1c1c1c;
-
-  border-radius: 18px;
+  border: 1px solid #1d1d1d;
+  border-radius: 16px;
 
   padding: 15px;
 
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.015);
+    0 5px 20px rgba(0, 0, 0, 0.16);
 }
 
-.card h3 {
-  margin-top: 0;
-}
+.section-title {
+  color: #ffffff;
 
+  font-size: 18px;
+  line-height: 1.2;
+
+  font-weight: 800;
+
+  margin:
+    5px
+    2px
+    11px;
+}
 
 /* =========================================================
-   ROWS
+   PROFILE CARD
    ========================================================= */
 
-.row {
+.profile-card {
+  width: 100%;
+
   display: flex;
   align-items: center;
 
-  gap: 12px;
+  gap: 13px;
 
-  min-width: 0;
+  padding: 14px;
+
+  background: #0d0d0d;
+
+  border: 1px solid #1d1d1d;
+  border-radius: 16px;
 }
 
-.grow {
+.profile-info {
   flex: 1;
   min-width: 0;
 }
 
+.profile-name {
+  color: #ffffff;
+
+  font-size: 17px;
+  line-height: 1.2;
+
+  font-weight: 800;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-username {
+  color: #888;
+
+  font-size: 13px;
+  line-height: 1.2;
+
+  margin-top: 4px;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* =========================================================
-   AVATAR
+   AVATARS
    ========================================================= */
 
 .avatar {
-  width: 48px;
-  height: 48px;
-  min-width: 48px;
+  width: 52px;
+  height: 52px;
+
+  flex: 0 0 52px;
 
   border-radius: 50%;
-
-  background: #151515;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  font-size: 25px;
+  overflow: hidden;
 
-  border: 1px solid #292929;
+  background:
+    radial-gradient(
+      circle at 35% 25%,
+      #222222,
+      #101010 65%
+    );
+
+  border: 1px solid #2a2a2a;
 
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.015);
+    0 5px 16px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px rgba(212, 175, 55, 0.04);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.avatar-emoji {
+  font-size: 27px;
+  line-height: 1;
+}
+
+/* =========================================================
+   ONLINE / OFFLINE
+   ========================================================= */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  color: #d4af37;
+
+  font-size: 12px;
+  line-height: 1.2;
+
+  font-weight: 700;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+
+  flex: 0 0 8px;
+
+  border-radius: 50%;
+
+  background: #42d67a;
+
+  box-shadow:
+    0 0 0 3px rgba(66, 214, 122, 0.08),
+    0 0 9px rgba(66, 214, 122, 0.45);
+}
+
+.offline {
+  color: #777;
+}
+
+.offline .status-dot {
+  background: #555;
+
+  box-shadow: none;
+}
+
+/* =========================================================
+   PEOPLE
+   ========================================================= */
+
+.people-title {
+  color: #ffffff;
+
+  font-size: 18px;
+  line-height: 1.2;
+
+  font-weight: 800;
+
+  margin:
+    21px
+    2px
+    8px;
+}
+
+.people {
+  width: 100%;
+
+  background: #0a0a0a;
+
+  border-top: 1px solid #171717;
+  border-bottom: 1px solid #171717;
+
+  border-radius: 14px;
+
+  overflow: hidden;
+}
+
+/* =========================================================
+   PERSON / CHAT ROW
+   ========================================================= */
+
+.row {
+  width: 100%;
+  min-height: 76px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 11px 13px;
+
+  background: transparent;
+
+  border-bottom: 1px solid #171717;
+
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row:active {
+  background: #111111;
+}
+
+.row-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .name {
   color: #ffffff;
 
   font-size: 16px;
-  line-height: 1.25;
+  line-height: 1.2;
 
   font-weight: 750;
 
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .sub {
-  color: #777777;
+  color: #777;
 
   font-size: 13px;
-  line-height: 1.3;
+  line-height: 1.25;
 
-  margin-top: 3px;
+  margin-top: 4px;
 
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
+.last-seen {
+  color: #666;
 
-/* =========================================================
-   ONLINE STATUS
-   ========================================================= */
-
-.online-status {
-  display: flex;
-  align-items: center;
-
-  gap: 6px;
+  font-size: 12px;
+  line-height: 1.2;
 
   margin-top: 5px;
-
-  color: #777777;
-
-  font-size: 11px;
 }
 
-.status-dot {
-  width: 7px;
-  height: 7px;
+.chevron {
+  width: 28px;
+  height: 28px;
 
-  border-radius: 50%;
+  flex: 0 0 28px;
 
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #555;
+
+  font-size: 25px;
+  line-height: 1;
+
+  transition:
+    color 0.15s ease,
+    transform 0.15s ease;
 }
 
-.status-dot.online {
-  background: #4caf50;
+.row:active .chevron {
+  color: #d4af37;
+  transform: translateX(2px);
+}
+
+/* =========================================================
+   UNREAD / NOTIFICATION BADGE
+   ========================================================= */
+
+.unread,
+.notification-badge {
+  min-width: 20px;
+  height: 20px;
+
+  padding: 0 6px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 10px;
+
+  background: #d4af37;
+  color: #050505;
+
+  font-size: 10px;
+  line-height: 1;
+
+  font-weight: 900;
 
   box-shadow:
-    0 0 6px rgba(76, 175, 80, 0.35);
+    0 3px 8px rgba(212, 175, 55, 0.2);
 }
-
-.status-dot.offline {
-  background: #555555;
-}
-
 
 /* =========================================================
    INPUTS
@@ -425,685 +648,132 @@ p {
 
 .input {
   width: 100%;
+
   min-height: 48px;
 
-  border: 1px solid #292929;
+  padding:
+    12px
+    14px;
 
-  border-radius: 13px;
+  margin-bottom: 12px;
 
-  background: #111111;
+  border-radius: 12px;
 
-  color: #ffffff;
-
-  padding: 12px 14px;
-
-  font-size: 16px;
-  line-height: 1.25;
+  border: 1px solid #272727;
 
   outline: none;
 
-  margin: 7px 0;
+  background: #111111;
+  color: #ffffff;
+
+  font-size: 16px;
+  line-height: 1.3;
 
   transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.input::placeholder {
+  color: #666;
 }
 
 .input:focus {
   border-color: #d4af37;
 
   box-shadow:
-    0 0 0 3px rgba(212, 175, 55, 0.07),
-    0 0 15px rgba(212, 175, 55, 0.04);
+    0 0 0 2px rgba(212, 175, 55, 0.08);
 }
-
-.input::placeholder {
-  color: #666666;
-}
-
 
 /* =========================================================
-   SEARCH
-   ========================================================= */
-
-.search {
-  margin-top: 2px;
-  margin-bottom: 12px;
-}
-
-
-/* =========================================================
-   GOLD BUTTONS
+   BUTTONS
    ========================================================= */
 
 .btn {
   width: min(100%, 340px);
+
   min-height: 48px;
 
-  display: block;
+  margin:
+    10px
+    auto
+    0;
 
-  margin: 10px auto;
+  padding:
+    12px
+    18px;
 
-  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  border: 0;
-
+  border: none;
   border-radius: 13px;
 
-  background: #d4af37;
+  background:
+    linear-gradient(
+      145deg,
+      #e0bd45,
+      #c39b28
+    );
 
   color: #050505;
 
   font-size: 15px;
   line-height: 1.2;
 
-  font-weight: 800;
+  font-weight: 850;
 
   box-shadow:
-    0 4px 15px rgba(212, 175, 55, 0.12);
+    0 6px 18px rgba(212, 175, 55, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 
   transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .btn:active {
-  transform: scale(0.985);
+  transform: scale(0.97);
 
   box-shadow:
-    0 2px 8px rgba(212, 175, 55, 0.08);
+    0 3px 10px rgba(212, 175, 55, 0.1);
 }
 
 .btn.secondary {
-  background: transparent;
-
+  background: #111111;
   color: #d4af37;
 
-  border: 1px solid #d4af37;
+  border: 1px solid #2b2b2b;
 
   box-shadow: none;
 }
 
+.btn.danger {
+  background: #241010;
+  color: #ff6b6b;
+
+  border: 1px solid #452020;
+
+  box-shadow: none;
+}
 
 /* =========================================================
-   PREMIUM ICON BUTTONS
+   LINKS
    ========================================================= */
 
-.iconbtn {
-  width: 42px;
-  height: 42px;
-  min-width: 42px;
+.link {
+  display: inline-block;
 
-  border: 1px solid transparent;
-
-  border-radius: 50%;
-
-  background: rgba(212, 175, 55, 0.035);
+  margin-top: 18px;
 
   color: #d4af37;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  font-size: 0;
-
-  position: relative;
-
-  transition:
-    transform 0.2s ease,
-    background 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.iconbtn:active {
-  transform: scale(0.9);
-
-  background: rgba(212, 175, 55, 0.12);
-
-  box-shadow:
-    0 0 15px rgba(212, 175, 55, 0.12);
-}
-
-
-/* =========================================================
-   BELL ICON
-   ========================================================= */
-
-.icon-bell::before {
-  content: "";
-
-  width: 15px;
-  height: 17px;
-
-  border: 2px solid currentColor;
-
-  border-radius:
-    9px 9px 5px 5px;
-
-  position: absolute;
-
-  top: 10px;
-}
-
-.icon-bell::after {
-  content: "";
-
-  width: 20px;
-  height: 2px;
-
-  background: currentColor;
-
-  border-radius: 3px;
-
-  position: absolute;
-
-  bottom: 10px;
-}
-
-
-/* =========================================================
-   SETTINGS ICON
-   ========================================================= */
-
-.icon-settings::before {
-  content: "⚙";
-
-  font-size: 25px;
-  line-height: 1;
-
-  color: currentColor;
-
-  filter:
-    drop-shadow(
-      0 0 5px
-      rgba(212, 175, 55, 0.16)
-    );
-}
-
-
-/* =========================================================
-   PHONE ICON
-   ========================================================= */
-
-.icon-phone::before {
-  content: "";
-
-  width: 18px;
-  height: 24px;
-
-  border: 2.2px solid currentColor;
-
-  border-radius: 5px;
-
-  transform: rotate(-32deg);
-
-  position: absolute;
-}
-
-.icon-phone::after {
-  content: "";
-
-  width: 6px;
-  height: 6px;
-
-  border-left: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-
-  border-radius: 0 0 0 3px;
-
-  transform: rotate(-32deg);
-
-  position: absolute;
-
-  top: 9px;
-}
-
-
-/* =========================================================
-   SEARCH ICON
-   ========================================================= */
-
-.icon-search::before {
-  content: "";
-
-  width: 14px;
-  height: 14px;
-
-  border: 2px solid currentColor;
-
-  border-radius: 50%;
-
-  position: absolute;
-
-  top: 9px;
-  left: 9px;
-}
-
-.icon-search::after {
-  content: "";
-
-  width: 8px;
-  height: 2px;
-
-  background: currentColor;
-
-  border-radius: 2px;
-
-  transform: rotate(-45deg);
-
-  position: absolute;
-
-  right: 7px;
-  bottom: 9px;
-}
-
-
-/* =========================================================
-   PLUS ICON
-   ========================================================= */
-
-.icon-plus::before,
-.icon-plus::after {
-  content: "";
-
-  width: 20px;
-  height: 2.5px;
-
-  background: currentColor;
-
-  border-radius: 3px;
-
-  position: absolute;
-}
-
-.icon-plus::after {
-  transform: rotate(90deg);
-}
-
-
-/* =========================================================
-   CLOSE ICON
-   ========================================================= */
-
-.icon-close::before,
-.icon-close::after {
-  content: "";
-
-  width: 20px;
-  height: 2px;
-
-  background: currentColor;
-
-  border-radius: 2px;
-
-  position: absolute;
-}
-
-.icon-close::before {
-  transform: rotate(45deg);
-}
-
-.icon-close::after {
-  transform: rotate(-45deg);
-}
-
-
-/* =========================================================
-   LIST ITEMS
-   ========================================================= */
-
-.listitem {
-  width: 100%;
-
-  display: flex;
-  align-items: center;
-
-  gap: 12px;
-
-  padding: 12px 4px;
-
-  border-bottom: 1px solid #181818;
-
-  cursor: pointer;
-
-  transition:
-    background 0.18s ease;
-}
-
-.listitem:active {
-  background: #101010;
-}
-
-.listitem .gold {
-  color: #d4af37;
-
-  font-size: 0;
-
-  width: 24px;
-  height: 24px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.listitem .gold::before {
-  content: "";
-
-  width: 8px;
-  height: 8px;
-
-  border-top: 2px solid #d4af37;
-  border-right: 2px solid #d4af37;
-
-  transform: rotate(45deg);
-
-  transition:
-    transform 0.2s ease;
-}
-
-.listitem:active .gold::before {
-  transform:
-    rotate(45deg)
-    translate(2px, -2px);
-}
-
-
-/* =========================================================
-   EMPTY STATES
-   ========================================================= */
-
-.empty {
-  padding: 60px 20px;
-
-  text-align: center;
-
-  color: #777777;
 
   font-size: 14px;
-  line-height: 1.5;
+  font-weight: 700;
+
+  text-align: center;
 }
-
-
-/* =========================================================
-   PREMIUM NAVIGATION
-   ========================================================= */
-
-.nav {
-  position: fixed;
-
-  left: 50%;
-  bottom: 0;
-
-  transform: translateX(-50%);
-
-  width: min(100%, 600px);
-
-  min-height: 72px;
-
-  padding:
-    7px 8px
-    max(7px, env(safe-area-inset-bottom));
-
-  background:
-    rgba(10, 10, 10, 0.97);
-
-  border-top: 1px solid #222222;
-
-  display: grid;
-
-  grid-template-columns:
-    repeat(5, 1fr);
-
-  z-index: 100;
-
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-
-  box-shadow:
-    0 -8px 30px rgba(0, 0, 0, 0.16);
-}
-
-.nav button {
-  border: 0;
-
-  background: transparent;
-
-  color: #666666;
-
-  display: flex;
-
-  flex-direction: column;
-
-  align-items: center;
-  justify-content: center;
-
-  gap: 3px;
-
-  min-width: 0;
-
-  padding: 5px 2px;
-
-  transition:
-    color 0.2s ease;
-}
-
-.nav button span {
-  width: 30px;
-  height: 30px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  position: relative;
-
-  font-size: 0;
-
-  line-height: 1;
-
-  color: currentColor;
-
-  transition:
-    transform 0.2s ease,
-    color 0.2s ease,
-    filter 0.2s ease;
-}
-
-.nav button b {
-  font-size: 10px;
-
-  line-height: 1.2;
-
-  font-weight: 600;
-
-  white-space: nowrap;
-
-  transition:
-    color 0.2s ease,
-    transform 0.2s ease;
-}
-
-
-/* =========================================================
-   NAV — CHAT
-   ========================================================= */
-
-.nav button:nth-child(1) span::before {
-  content: "";
-
-  width: 21px;
-  height: 16px;
-
-  border: 2px solid currentColor;
-
-  border-radius: 9px;
-
-  position: absolute;
-
-  top: 5px;
-  left: 4px;
-}
-
-.nav button:nth-child(1) span::after {
-  content: "";
-
-  width: 7px;
-  height: 7px;
-
-  border-left: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-
-  transform: skew(-18deg);
-
-  position: absolute;
-
-  left: 6px;
-  bottom: 4px;
-}
-
-
-/* =========================================================
-   NAV — SEARCH
-   ========================================================= */
-
-.nav button:nth-child(2) span::before {
-  content: "";
-
-  width: 13px;
-  height: 13px;
-
-  border: 2px solid currentColor;
-
-  border-radius: 50%;
-
-  position: absolute;
-
-  top: 5px;
-  left: 5px;
-}
-
-.nav button:nth-child(2) span::after {
-  content: "";
-
-  width: 8px;
-  height: 2px;
-
-  background: currentColor;
-
-  border-radius: 2px;
-
-  transform: rotate(-45deg);
-
-  position: absolute;
-
-  right: 2px;
-  bottom: 6px;
-}
-
-
-/* =========================================================
-   NAV — MOMENTS
-   ========================================================= */
-
-.nav button:nth-child(3) span::before {
-  content: "✦";
-
-  font-size: 27px;
-
-  font-weight: 400;
-
-  line-height: 1;
-
-  color: currentColor;
-}
-
-
-/* =========================================================
-   NAV — CALLS
-   ========================================================= */
-
-.nav button:nth-child(4) span::before {
-  content: "☎";
-
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
-
-  font-size: 27px;
-
-  font-weight: 400;
-
-  line-height: 1;
-
-  color: currentColor;
-
-  transform: rotate(-8deg);
-}
-
-
-/* =========================================================
-   NAV — SETTINGS
-   ========================================================= */
-
-.nav button:nth-child(5) span::before {
-  content: "⚙";
-
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
-
-  font-size: 27px;
-
-  font-weight: 400;
-
-  line-height: 1;
-
-  color: currentColor;
-}
-
-
-/* =========================================================
-   NAV ACTIVE STATE
-   ========================================================= */
-
-.nav button.active {
-  color: #d4af37;
-}
-
-.nav button.active span {
-  transform: translateY(-1px) scale(1.08);
-
-  color: #d4af37;
-
-  filter:
-    drop-shadow(
-      0 0 5px
-      rgba(212, 175, 55, 0.25)
-    );
-}
-
-.nav button.active b {
-  color: #d4af37;
-
-  font-weight: 750;
-}
-
-.nav button:active span {
-  transform: scale(0.9);
-}
-
-.nav button:active b {
-  transform: translateY(1px);
-}
-
 
 /* =========================================================
    CHAT
@@ -1111,32 +781,25 @@ p {
 
 .chat {
   width: 100%;
-
-  height: 100vh;
-  height: 100dvh;
-
-  background: #050505;
+  min-height: 100vh;
+  min-height: 100dvh;
 
   display: flex;
-
   flex-direction: column;
 
-  overflow: hidden;
+  background: #050505;
 }
-
 
 /* =========================================================
    CHAT HEADER
    ========================================================= */
 
 .chathead {
-  flex-shrink: 0;
-
-  min-height: 70px;
+  width: 100%;
 
   padding:
-    max(10px, env(safe-area-inset-top))
-    10px
+    calc(10px + env(safe-area-inset-top))
+    12px
     10px;
 
   display: flex;
@@ -1146,99 +809,64 @@ p {
 
   background: #0b0b0b;
 
-  border-bottom: 1px solid #222222;
+  border-bottom: 1px solid #222;
 
+  position: relative;
   z-index: 10;
 }
 
 .chathead .avatar {
   width: 42px;
   height: 42px;
-
-  min-width: 42px;
-
-  font-size: 22px;
+  flex-basis: 42px;
 }
 
 .chathead .name {
   font-size: 15px;
 }
 
-.chathead .iconbtn {
-  width: 38px;
-  height: 38px;
-
-  min-width: 38px;
-
-  font-size: 0;
+.chathead .sub {
+  font-size: 11px;
 }
-
 
 /* =========================================================
-   CHAT HEADER CALL ICON
+   CHAT ACTION BUTTONS
    ========================================================= */
 
-.chathead .icon-phone::before {
-  width: 16px;
-  height: 21px;
-}
+.chat-icon,
+.call-icon,
+.video-icon {
+  width: 39px;
+  height: 39px;
 
-.chathead .icon-phone::after {
-  width: 5px;
-  height: 5px;
-}
+  flex: 0 0 39px;
 
-
-/* =========================================================
-   BACK BUTTON
-   ========================================================= */
-
-.back {
-  width: 36px;
-  height: 42px;
-
-  min-width: 36px;
-
-  padding: 0;
-
-  border: 0;
-
-  background: transparent;
-
-  color: #d4af37;
-
-  font-size: 0;
-
-  line-height: 1;
-
-  display: flex;
-
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 
+  border-radius: 12px;
+
+  background: #111111;
+
+  border: 1px solid #252525;
+
+  color: #d4af37;
+
+  font-size: 18px;
+  line-height: 1;
+
   transition:
-    transform 0.2s ease,
-    opacity 0.2s ease;
+    transform 0.15s ease,
+    background 0.15s ease;
 }
 
-.back::before {
-  content: "";
-
-  width: 13px;
-  height: 13px;
-
-  border-left: 3px solid #d4af37;
-  border-bottom: 3px solid #d4af37;
-
-  transform: rotate(45deg);
+.chat-icon:active,
+.call-icon:active,
+.video-icon:active {
+  transform: scale(0.92);
+  background: #191919;
 }
-
-.back:active {
-  transform: scale(0.88);
-
-  opacity: 0.75;
-}
-
 
 /* =========================================================
    MESSAGES
@@ -1253,162 +881,193 @@ p {
   overflow-x: hidden;
 
   padding:
+    16px
     14px
-    13px
     18px;
-
-  display: flex;
-
-  flex-direction: column;
 
   -webkit-overflow-scrolling: touch;
 
-  overscroll-behavior: contain;
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(212, 175, 55, 0.025),
+      transparent 35%
+    ),
+    #050505;
 }
 
+/* =========================================================
+   MESSAGE BUBBLES
+   ========================================================= */
+
 .bubble {
-  max-width: min(78%, 330px);
+  max-width: 78%;
 
   padding:
-    9px
-    12px
-    7px;
+    10px
+    13px;
 
-  margin-bottom: 7px;
+  margin-bottom: 8px;
 
   border-radius: 17px;
 
   font-size: 15px;
-
   line-height: 1.4;
 
-  word-break: break-word;
-
   overflow-wrap: anywhere;
+
+  position: relative;
 }
 
 .bubble.mine {
-  align-self: flex-end;
-
-  background: #d4af37;
+  margin-left: auto;
 
   color: #050505;
 
+  background:
+    linear-gradient(
+      145deg,
+      #e0bd45,
+      #c39b28
+    );
+
   border-bottom-right-radius: 5px;
+
+  box-shadow:
+    0 3px 10px rgba(212, 175, 55, 0.08);
 }
 
 .bubble.theirs {
-  align-self: flex-start;
+  margin-right: auto;
+
+  color: #ffffff;
 
   background: #171717;
 
-  color: #ffffff;
+  border: 1px solid #202020;
 
   border-bottom-left-radius: 5px;
 }
 
+/* =========================================================
+   MESSAGE META
+   ========================================================= */
+
 .message-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 5px;
+
   margin-top: 4px;
 
-  font-size: 9px;
-
-  line-height: 1;
-
-  text-align: right;
-
-  opacity: 0.55;
+  font-size: 10px;
 }
 
+.bubble.mine .message-meta {
+  color: rgba(5, 5, 5, 0.55);
+}
+
+.bubble.theirs .message-meta {
+  color: #666;
+}
 
 /* =========================================================
    COMPOSER
    ========================================================= */
 
 .composer {
-  flex-shrink: 0;
-
   width: 100%;
 
   display: flex;
-
   align-items: flex-end;
 
-  gap: 6px;
+  gap: 7px;
 
   padding:
-    8px
     9px
-    max(9px, env(safe-area-inset-bottom));
+    10px
+    calc(9px + env(safe-area-inset-bottom));
 
   background: #0b0b0b;
 
-  border-top: 1px solid #222222;
+  border-top: 1px solid #222;
 }
 
-.composer .iconbtn {
-  width: 40px;
-  height: 44px;
-
-  min-width: 40px;
-
-  font-size: 0;
-
-  background: transparent;
-
-  box-shadow: none;
-}
-
-
-/* =========================================================
-   COMPOSER PLUS
-   ========================================================= */
-
-.composer .iconbtn::before,
-.composer .iconbtn::after {
-  content: "";
-
-  width: 20px;
-  height: 2.5px;
-
-  background: #d4af37;
-
-  border-radius: 3px;
-
-  position: absolute;
-
-  box-shadow:
-    0 0 5px rgba(212, 175, 55, 0.18);
-}
-
-.composer .iconbtn::after {
-  transform: rotate(90deg);
-}
-
-
-/* =========================================================
-   COMPOSER INPUT
-   ========================================================= */
-
-.composer .input {
+.composer input,
+.composer textarea {
   flex: 1;
 
   min-width: 0;
 
   min-height: 44px;
-
-  max-height: 105px;
-
-  margin: 0;
+  max-height: 110px;
 
   padding:
     11px
-    14px;
+    15px;
 
   border-radius: 22px;
 
+  border: 1px solid #252525;
+
+  outline: none;
+
+  background: #171717;
+  color: #ffffff;
+
   font-size: 15px;
+
+  resize: none;
 }
 
+.composer input::placeholder,
+.composer textarea::placeholder {
+  color: #666;
+}
+
+.composer input:focus,
+.composer textarea:focus {
+  border-color: #333;
+}
+
+/* =========================================================
+   ATTACHMENT BUTTON
+   ========================================================= */
+
+.attach-icon {
+  width: 42px;
+  height: 42px;
+
+  flex: 0 0 42px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 13px;
+
+  background: #111111;
+
+  border: 1px solid #252525;
+
+  color: #d4af37;
+
+  font-size: 19px;
+
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.25);
+
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
+}
+
+.attach-icon:active {
+  transform: scale(0.92);
+  background: #191919;
+}
 
 /* =========================================================
    SEND BUTTON
@@ -1418,573 +1077,627 @@ p {
   width: 44px;
   height: 44px;
 
-  min-width: 44px;
+  flex: 0 0 44px;
 
-  border: 0;
-
+  border: none;
   border-radius: 50%;
 
-  background: #d4af37;
-
-  color: #050505;
-
-  font-size: 0;
-
-  font-weight: 900;
-
   display: flex;
-
   align-items: center;
   justify-content: center;
 
-  position: relative;
+  background:
+    linear-gradient(
+      145deg,
+      #e0bd45,
+      #c39b28
+    );
+
+  color: #050505;
 
   box-shadow:
-    0 4px 14px rgba(212, 175, 55, 0.18);
+    0 5px 16px rgba(212, 175, 55, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 
   transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
-}
-
-
-/* Send arrow */
-
-.send::before {
-  content: "";
-
-  width: 10px;
-  height: 10px;
-
-  border-top: 3px solid #050505;
-  border-right: 3px solid #050505;
-
-  transform: rotate(45deg);
-
-  position: relative;
-
-  left: -2px;
-}
-
-
-/* Send arrow shaft */
-
-.send::after {
-  content: "";
-
-  width: 17px;
-  height: 3px;
-
-  background: #050505;
-
-  border-radius: 3px;
-
-  transform: rotate(0deg);
-
-  position: absolute;
-
-  left: 13px;
+    transform 0.15s ease;
 }
 
 .send:active {
   transform: scale(0.91);
-
-  box-shadow:
-    0 2px 7px rgba(212, 175, 55, 0.1);
 }
 
-
-/* =========================================================
-   FILE INPUT
-   ========================================================= */
-
-.photo-btn {
-  position: absolute;
-
-  width: 1px;
-  height: 1px;
-
-  opacity: 0;
-
-  pointer-events: none;
+.send-icon {
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 900;
 }
 
-
 /* =========================================================
-   ATTACHMENTS
+   MEDIA / ATTACHMENTS
    ========================================================= */
 
-.attachment-list {
+.attachment {
   margin-top: 7px;
 
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 7px;
-}
-
-.attachment-image {
-  display: block;
-
-  width: 100%;
-
-  max-width: 280px;
-
-  padding: 0;
-
-  border: 0;
-
-  background: transparent;
+  border-radius: 13px;
 
   overflow: hidden;
 
-  border-radius: 12px;
+  background: #101010;
+
+  border: 1px solid #242424;
 }
 
-.attachment-image img {
+.attachment img,
+.attachment video {
   width: 100%;
-
-  max-width: 280px;
-
-  max-height: 360px;
-
-  display: block;
+  max-height: 280px;
 
   object-fit: cover;
-
-  border-radius: 12px;
-}
-
-.attachment-loading {
-  padding: 18px;
-
-  border-radius: 12px;
-
-  background: #111111;
-
-  color: #999999;
-
-  text-align: center;
-
-  font-size: 13px;
 }
 
 .attachment-file {
-  width: 100%;
-
   display: flex;
-
   align-items: center;
 
-  gap: 9px;
+  gap: 10px;
 
-  padding: 10px 12px;
-
-  border: 1px solid #292929;
-
-  border-radius: 10px;
-
-  background: #111111;
+  padding: 12px;
 
   color: #ffffff;
-
-  text-align: left;
-
-  font-size: 13px;
-
-  overflow: hidden;
 }
 
-.attachment-file span {
-  overflow: hidden;
-
-  text-overflow: ellipsis;
-
-  white-space: nowrap;
-}
-
-
-/* =========================================================
-   MOMENTS
-   ========================================================= */
-
-.moment {
-  width: 100%;
-
-  background: #0d0d0d;
-
-  border: 1px solid #1c1c1c;
-
-  border-radius: 16px;
-
-  overflow: hidden;
-
-  margin-bottom: 14px;
-}
-
-.moment img {
-  width: 100%;
-
-  max-height: 420px;
-
-  display: block;
-
-  object-fit: cover;
-}
-
-.moment p {
-  margin: 0;
-
-  padding: 13px 14px;
-
-  color: #ffffff;
-
-  font-size: 14px;
-}
-
-
-/* =========================================================
-   MOMENTS ICON
-   ========================================================= */
-
-.moment-icon {
+.attachment-file-icon {
   color: #d4af37;
-
-  font-size: 0;
-
-  width: 30px;
-  height: 30px;
-
-  display: flex;
-
-  align-items: center;
-  justify-content: center;
+  font-size: 20px;
 }
-
-.moment-icon::before {
-  content: "✦";
-
-  font-size: 27px;
-
-  line-height: 1;
-
-  filter:
-    drop-shadow(
-      0 0 5px
-      rgba(212, 175, 55, 0.18)
-    );
-}
-
 
 /* =========================================================
-   SWITCH
+   BOTTOM NAVIGATION
    ========================================================= */
 
-.switch {
-  width: 42px;
-  height: 24px;
-
-  appearance: none;
-  -webkit-appearance: none;
-
-  border-radius: 20px;
-
-  background: #292929;
-
-  position: relative;
-
-  cursor: pointer;
-
-  transition:
-    background 0.2s ease;
-}
-
-.switch::after {
-  content: "";
-
-  position: absolute;
-
-  width: 18px;
-  height: 18px;
-
-  left: 3px;
-  top: 3px;
-
-  border-radius: 50%;
-
-  background: #ffffff;
-
-  transition:
-    transform 0.2s ease;
-}
-
-.switch:checked {
-  background: #d4af37;
-
-  box-shadow:
-    0 0 8px rgba(212, 175, 55, 0.14);
-}
-
-.switch:checked::after {
-  transform: translateX(18px);
-}
-
-
-/* =========================================================
-   TOAST
-   ========================================================= */
-
-.toast {
+.nav {
   position: fixed;
 
-  left: 50%;
+  left: 0;
+  right: 0;
+  bottom: 0;
 
-  bottom:
-    calc(
-      84px +
-      env(safe-area-inset-bottom)
-    );
+  width: 100%;
 
-  transform: translateX(-50%);
-
-  width: min(
-    calc(100% - 32px),
-    390px
-  );
+  height: 74px;
 
   padding:
-    11px
-    15px;
+    6px
+    8px
+    calc(6px + env(safe-area-inset-bottom));
+
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+
+  background: rgba(10, 10, 10, 0.97);
+
+  border-top: 1px solid #242424;
+
+  box-shadow:
+    0 -8px 25px rgba(0, 0, 0, 0.38);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  z-index: 100;
+}
+
+.nav-item {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 3px;
+
+  color: #626262;
 
   border-radius: 12px;
 
-  background: #171717;
-
-  border: 1px solid #303030;
-
-  color: #ffffff;
-
-  text-align: center;
-
-  font-size: 13px;
-
-  line-height: 1.35;
-
-  box-shadow:
-    0 8px 30px rgba(0, 0, 0, 0.45);
-
-  z-index: 9999;
+  transition:
+    color 0.18s ease,
+    transform 0.15s ease;
 }
 
+.nav-item:active {
+  transform: scale(0.92);
+}
 
-/* =========================================================
-   GOLD TEXT
-   ========================================================= */
+.nav-icon {
+  width: 30px;
+  height: 30px;
 
-.gold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 10px;
+
+  font-size: 19px;
+  line-height: 1;
+
+  color: #626262;
+
+  transition:
+    color 0.18s ease,
+    background 0.18s ease;
+}
+
+.nav-label {
+  font-size: 10px;
+  line-height: 1;
+
+  font-weight: 700;
+
+  color: #626262;
+}
+
+.nav-item.active,
+.nav-item.active .nav-icon,
+.nav-item.active .nav-label {
   color: #d4af37;
 }
 
+.nav-item.active .nav-icon {
+  background: rgba(212, 175, 55, 0.09);
 
-/* =========================================================
-   PROFILE SETUP
-   ========================================================= */
-
-#uname,
-#dname {
-  width: min(
-    100%,
-    360px
-  );
-
-  margin-left: auto;
-  margin-right: auto;
+  box-shadow:
+    inset 0 0 0 1px rgba(212, 175, 55, 0.08);
 }
 
-#profileSaveButton {
-  margin-top: 12px;
+/* =========================================================
+   SETTINGS
+   ========================================================= */
+
+.settings-list {
+  width: 100%;
+
+  background: #0a0a0a;
+
+  border-top: 1px solid #171717;
+  border-bottom: 1px solid #171717;
+
+  border-radius: 14px;
+
+  overflow: hidden;
 }
 
+.settings-row {
+  width: 100%;
+  min-height: 67px;
 
-/* =========================================================
-   SETTINGS — PREMIUM ROW ICONS
-   ========================================================= */
+  padding:
+    11px
+    13px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  border-bottom: 1px solid #171717;
+
+  background: transparent;
+
+  transition:
+    background 0.15s ease;
+}
+
+.settings-row:last-child {
+  border-bottom: none;
+}
+
+.settings-row:active {
+  background: #111111;
+}
 
 .settings-icon {
   width: 42px;
   height: 42px;
 
-  min-width: 42px;
+  flex: 0 0 42px;
 
-  display: flex;
-
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 
+  border-radius: 12px;
+
+  background: #111111;
+
+  border: 1px solid #252525;
+
   color: #d4af37;
 
-  position: relative;
+  font-size: 19px;
 }
 
-
-/* Bell */
-
-.settings-icon.bell::before {
-  content: "";
-
-  width: 15px;
-  height: 17px;
-
-  border: 2px solid currentColor;
-
-  border-radius:
-    9px 9px 5px 5px;
-
-  position: absolute;
-
-  top: 8px;
+.settings-info {
+  flex: 1;
+  min-width: 0;
 }
 
-.settings-icon.bell::after {
-  content: "";
+.settings-title {
+  color: #ffffff;
 
-  width: 19px;
-  height: 2px;
-
-  background: currentColor;
-
-  border-radius: 3px;
-
-  position: absolute;
-
-  bottom: 8px;
+  font-size: 15px;
+  font-weight: 750;
 }
 
+.settings-subtitle {
+  color: #777;
+
+  font-size: 12px;
+
+  margin-top: 4px;
+}
+
+.settings-row.danger .settings-title {
+  color: #ff6b6b;
+}
 
 /* =========================================================
-   CALLS SCREEN ICON
+   MOMENTS
    ========================================================= */
 
-.call-icon {
-  width: 100px;
-  height: 100px;
+.moments {
+  width: 100%;
 
-  border-radius: 28px;
+  padding: 20px 16px;
+}
 
-  background: #080808;
+.moment-card {
+  background: #0d0d0d;
+
+  border: 1px solid #202020;
+  border-radius: 16px;
+
+  padding: 16px;
+
+  margin-bottom: 12px;
+}
+
+.moment-title {
+  color: #ffffff;
+
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.moment-text {
+  color: #999;
+
+  font-size: 13px;
+  line-height: 1.45;
+
+  margin-top: 7px;
+}
+
+/* =========================================================
+   CALLS
+   ========================================================= */
+
+.call-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
 
   display: flex;
-
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-
-  position: relative;
-
-  box-shadow:
-    inset 0 0 0 1px rgba(212, 175, 55, 0.025);
-}
-
-.call-icon::before {
-  content: "";
-
-  width: 55px;
-  height: 55px;
-
-  border: 3px solid #d4af37;
-
-  border-radius: 50%;
-
-  position: absolute;
-}
-
-.call-icon::after {
-  content: "⌕";
-
-  color: #d4af37;
-
-  font-size: 48px;
-
-  transform: rotate(-25deg);
-}
-
-
-/* =========================================================
-   PREMIUM CALL BUTTON
-   ========================================================= */
-
-.call-action {
-  background: #d4af37;
-
-  color: #050505;
-
-  border-radius: 14px;
-
-  min-height: 52px;
-
-  font-weight: 800;
-
-  box-shadow:
-    0 5px 18px rgba(212, 175, 55, 0.14);
-
-  transition:
-    transform 0.18s ease;
-}
-
-.call-action:active {
-  transform: scale(0.985);
-}
-
-
-/* =========================================================
-   LOGIN / SIGNUP CENTER CONTENT
-   ========================================================= */
-
-.screen.center {
-  padding:
-    24px
-    20px
-    max(40px, env(safe-area-inset-bottom));
-}
-
-.screen.center .logo {
-  width: 76px;
-  height: 76px;
-}
-
-.screen.center .muted {
-  max-width: 320px;
 
   text-align: center;
 
-  margin:
-    0
-    0
-    18px;
+  padding: 30px;
 }
 
-.screen.center .input {
-  width: min(100%, 360px);
+.call-avatar {
+  width: 90px;
+  height: 90px;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #151515;
+
+  border: 1px solid #2b2b2b;
+
+  box-shadow:
+    0 0 0 8px rgba(212, 175, 55, 0.04),
+    0 15px 35px rgba(0, 0, 0, 0.45);
 }
 
-.screen.center .btn {
-  width: min(100%, 340px);
+.call-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 15px;
+
+  margin-top: 28px;
 }
 
+.call-action {
+  width: 52px;
+  height: 52px;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #151515;
+
+  border: 1px solid #292929;
+
+  color: #d4af37;
+
+  font-size: 21px;
+}
+
+.call-action.end {
+  background: #5b1717;
+  color: #ffffff;
+  border-color: #7b2020;
+}
 
 /* =========================================================
-   SMALL PHONES
+   SEARCH
+   ========================================================= */
+
+.search-box {
+  width: 100%;
+
+  position: relative;
+
+  margin-bottom: 15px;
+}
+
+.search-box input {
+  width: 100%;
+
+  min-height: 46px;
+
+  padding:
+    11px
+    14px
+    11px
+    42px;
+
+  border-radius: 13px;
+
+  border: 1px solid #252525;
+
+  background: #111111;
+  color: #ffffff;
+
+  outline: none;
+
+  font-size: 15px;
+}
+
+.search-box input:focus {
+  border-color: #d4af37;
+}
+
+.search-icon {
+  position: absolute;
+
+  left: 14px;
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  color: #777;
+
+  font-size: 17px;
+}
+
+/* =========================================================
+   EMPTY STATES
+   ========================================================= */
+
+.empty {
+  width: 100%;
+
+  padding:
+    55px
+    25px;
+
+  text-align: center;
+}
+
+.empty-icon {
+  width: 62px;
+  height: 62px;
+
+  margin: 0 auto 15px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 18px;
+
+  background: #111111;
+
+  border: 1px solid #242424;
+
+  color: #d4af37;
+
+  font-size: 27px;
+}
+
+.empty-title {
+  color: #ffffff;
+
+  font-size: 17px;
+  font-weight: 750;
+}
+
+.empty-text {
+  max-width: 290px;
+
+  margin: 7px auto 0;
+
+  color: #777;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   TOAST / ALERT
+   ========================================================= */
+
+.toast {
+  position: fixed;
+
+  left: 16px;
+  right: 16px;
+
+  bottom:
+    calc(88px + env(safe-area-inset-bottom));
+
+  z-index: 999;
+
+  max-width: 480px;
+
+  margin: 0 auto;
+
+  padding:
+    12px
+    15px;
+
+  border-radius: 13px;
+
+  background: #171717;
+
+  border: 1px solid #292929;
+
+  color: #ffffff;
+
+  font-size: 13px;
+
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.45);
+}
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 180px;
+
+  color: #777;
+
+  font-size: 13px;
+}
+
+.spinner {
+  width: 22px;
+  height: 22px;
+
+  margin-right: 9px;
+
+  border: 2px solid #292929;
+  border-top-color: #d4af37;
+
+  border-radius: 50%;
+
+  animation:
+    leo-spin 0.8s linear infinite;
+}
+
+@keyframes leo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================
+   AVATAR / ICON UNIVERSAL POLISH
+   ========================================================= */
+
+.icon,
+.nav-icon,
+.action-icon,
+.header-icon,
+.chat-icon,
+.settings-icon,
+.attach-icon,
+.call-icon,
+.video-icon,
+.send-icon,
+.chevron {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+
+  white-space: nowrap;
+}
+
+/* =========================================================
+   GOLD DIVIDER
+   ========================================================= */
+
+.gold-line {
+  width: 42px;
+  height: 2px;
+
+  margin:
+    8px
+    auto
+    18px;
+
+  border-radius: 2px;
+
+  background: #d4af37;
+}
+
+/* =========================================================
+   PROFILE SETUP
+   ========================================================= */
+
+.profile-setup {
+  width: 100%;
+  max-width: 420px;
+
+  margin: 0 auto;
+
+  padding: 20px;
+}
+
+.profile-setup .logo {
+  margin-bottom: 18px;
+}
+
+.profile-setup .input {
+  margin-bottom: 12px;
+}
+
+/* =========================================================
+   MEDIA QUERIES
    ========================================================= */
 
 @media (max-width: 380px) {
-
-  h1 {
-    font-size: 31px;
-  }
-
-  h2 {
-    font-size: 24px;
-  }
 
   .content {
     padding-left: 13px;
@@ -1996,73 +1709,128 @@ p {
     padding-right: 14px;
   }
 
-  .brand {
-    font-size: 19px;
+  .top-title {
+    font-size: 20px;
   }
 
   .avatar {
-    width: 45px;
-    height: 45px;
-
-    min-width: 45px;
+    width: 48px;
+    height: 48px;
+    flex-basis: 48px;
   }
 
-  .bubble {
-    max-width: 82%;
-
-    font-size: 14px;
+  .row {
+    min-height: 72px;
+    padding-left: 10px;
+    padding-right: 10px;
   }
 
-  .btn {
-    min-height: 46px;
+  .name {
+    font-size: 15px;
   }
 
-  .nav button span {
+  .sub {
+    font-size: 12px;
+  }
+
+  .nav {
+    height: 71px;
+  }
+
+  .nav-icon {
     width: 28px;
     height: 28px;
+    font-size: 18px;
   }
 
-  .nav button:nth-child(3) span::before {
-    font-size: 25px;
-  }
-
-  .nav button:nth-child(4) span::before,
-  .nav button:nth-child(5) span::before {
-    font-size: 25px;
-  }
-
-  .nav button b {
+  .nav-label {
     font-size: 9px;
+  }
+
+  .header-icon,
+  .action-icon {
+    width: 37px;
+    height: 37px;
+  }
+
+  .chat-icon,
+  .call-icon,
+  .video-icon {
+    width: 36px;
+    height: 36px;
   }
 }
 
-
 /* =========================================================
-   LARGER PHONES / TABLETS
+   TABLET / DESKTOP
    ========================================================= */
 
 @media (min-width: 601px) {
 
+  body {
+    background: #000000;
+  }
+
   .shell {
-    border-left: 1px solid #111111;
-    border-right: 1px solid #111111;
+    border-left: 1px solid #161616;
+    border-right: 1px solid #161616;
+
+    box-shadow:
+      0 0 50px rgba(0, 0, 0, 0.6);
   }
 
   .nav {
-    border-left: 1px solid #222222;
-    border-right: 1px solid #222222;
-  }
+    left: 50%;
+    right: auto;
 
-  .content {
-    padding-left: 20px;
-    padding-right: 20px;
-  }
+    width: min(600px, 100%);
 
-  .bubble {
-    max-width: 70%;
+    transform: translateX(-50%);
   }
 }
 
+/* =========================================================
+   IOS SAFE AREA
+   ========================================================= */
+
+@supports (padding: max(0px)) {
+
+  .top {
+    padding-top:
+      max(
+        17px,
+        calc(17px + env(safe-area-inset-top))
+      );
+  }
+
+  .composer {
+    padding-bottom:
+      max(
+        9px,
+        calc(9px + env(safe-area-inset-bottom))
+      );
+  }
+
+  .nav {
+    padding-bottom:
+      max(
+        6px,
+        calc(6px + env(safe-area-inset-bottom))
+      );
+  }
+}
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #d4af37;
+  outline-offset: 2px;
+}
 
 /* =========================================================
    REDUCED MOTION
@@ -2073,65 +1841,9 @@ p {
   *,
   *::before,
   *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
-
-    transition: none !important;
-
-    animation: none !important;
   }
-}
-
-
-/* =========================================================
-   IOS SAFE AREA
-   ========================================================= */
-
-@supports (
-  padding: max(0px)
-) {
-
-  .screen.center {
-    padding-top:
-      max(
-        24px,
-        env(safe-area-inset-top)
-      );
-  }
-
-  .content {
-    padding-bottom:
-      max(
-        110px,
-        calc(
-          110px +
-          env(safe-area-inset-bottom)
-        )
-      );
-  }
-}
-
-
-/* =========================================================
-   FINAL PREMIUM TOUCH
-   ========================================================= */
-
-button,
-.iconbtn,
-.nav button,
-.back,
-.send {
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.nav button,
-.iconbtn,
-.back,
-.send {
-  -webkit-touch-callout: none;
-}
-
-::selection {
-  background: rgba(212, 175, 55, 0.25);
-  color: #ffffff;
 }
