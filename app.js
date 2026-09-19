@@ -3,17 +3,21 @@
      LEO CHAT — WEB APP
      Stable version
 
+     UPDATED AFTER NEW MOBILE CSS
+
      FIXES:
-     - Chat composer is created only once
-     - Typing is never destroyed by polling
-     - Realtime updates never rebuild the composer
-     - Attachment uploads never rebuild the composer
-     - Failed sends restore the message
-     - Message updates only replace #messages
-     - Search input is created only once
-     - Search typing is never destroyed by polling
-     - Search results update without rebuilding #q
-     - Profile setup remains protected
+     - Startup alert removed
+     - Profile username does not clear while typing
+     - Search input does not clear while typing
+     - Chat composer does not rebuild while typing
+     - Realtime messages update messages only
+     - Polling does not destroy active inputs
+     - Attachments do not destroy typed messages
+     - Failed sends restore typed message
+     - Real Supabase attachments remain enabled
+     - Presence remains enabled
+     - Notifications remain enabled
+     - Compatible with the new mobile styles.css
      ========================================================= */
 
   const cfg = window.LEO_CONFIG || {};
@@ -98,6 +102,7 @@
 
   let messageDraft = "";
   let searchDraft = "";
+
   let chatRenderToken = 0;
   let sendingMessage = false;
 
@@ -127,7 +132,11 @@
         }[c])
     );
 
-  const toast = (message) => {
+  function icon(x) {
+    return `<span>${x}</span>`;
+  }
+
+  function toast(message) {
     const shell = app.querySelector(".shell");
 
     if (!shell) {
@@ -145,10 +154,7 @@
     setTimeout(() => {
       d.remove();
     }, 3000);
-  };
-
-  const icon = (x) =>
-    `<span>${x}</span>`;
+  }
 
   function formatTime(value) {
     if (!value) return "";
@@ -220,7 +226,7 @@
   }
 
   /* =========================================================
-     MESSAGE DRAFT
+     DRAFT PROTECTION
      ========================================================= */
 
   window.updateMessageDraft = (value) => {
@@ -228,8 +234,7 @@
   };
 
   function captureMessageDraft() {
-    const input =
-      document.getElementById("msg");
+    const input = document.getElementById("msg");
 
     if (input) {
       messageDraft = input.value;
@@ -239,25 +244,19 @@
   }
 
   function restoreMessageDraft() {
-    const input =
-      document.getElementById("msg");
+    const input = document.getElementById("msg");
 
     if (!input) return;
 
     input.value = messageDraft;
   }
 
-  /* =========================================================
-     SEARCH DRAFT
-     ========================================================= */
-
   window.updateSearchDraft = (value) => {
     searchDraft = String(value ?? "");
   };
 
   function captureSearchDraft() {
-    const input =
-      document.getElementById("q");
+    const input = document.getElementById("q");
 
     if (input) {
       searchDraft = input.value;
@@ -267,8 +266,7 @@
   }
 
   function restoreSearchDraft() {
-    const input =
-      document.getElementById("q");
+    const input = document.getElementById("q");
 
     if (!input) return;
 
@@ -347,7 +345,7 @@
     const now = new Date().toISOString();
 
     try {
-      const { error } = await db
+      await db
         .from("user_presence")
         .update({
           is_online: false,
@@ -359,13 +357,6 @@
           "user_id",
           state.user.id
         );
-
-      if (error) {
-        console.log(
-          "Offline update:",
-          error.message
-        );
-      }
     } catch (error) {
       console.log(
         "Offline error:",
@@ -458,12 +449,26 @@
               };
             });
 
+            /*
+              IMPORTANT:
+              Never render setup/chat/search here.
+              Background presence updates must not
+              destroy active inputs.
+            */
+
             if (
               state.screen === "home" ||
               state.screen === "search"
             ) {
               render();
             }
+
+            if (
+              state.screen === "chat"
+            ) {
+              updateChatHeaderStatus();
+            }
+
           } catch (error) {
             console.log(
               "Presence sync:",
@@ -502,6 +507,12 @@
           ) {
             render();
           }
+
+          if (
+            state.screen === "chat"
+          ) {
+            updateChatHeaderStatus();
+          }
         }
       )
       .on(
@@ -525,10 +536,18 @@
           ) {
             render();
           }
+
+          if (
+            state.screen === "chat"
+          ) {
+            updateChatHeaderStatus();
+          }
         }
       )
       .subscribe(async (status) => {
-        if (status === "SUBSCRIBED") {
+        if (
+          status === "SUBSCRIBED"
+        ) {
           try {
             await presenceChannel.track({
               user_id: state.user.id,
@@ -539,12 +558,7 @@
                   : "online",
               at: new Date().toISOString()
             });
-          } catch (error) {
-            console.log(
-              "Presence track:",
-              error.message
-            );
-          }
+          } catch {}
         }
       });
 
@@ -556,6 +570,10 @@
 
         await ensurePresence();
         await loadPresence();
+
+        /*
+          NEVER rebuild active input screens.
+        */
 
         if (
           state.screen === "home"
@@ -570,8 +588,7 @@
         }
 
         if (
-          state.screen === "chat" &&
-          state.chat
+          state.screen === "chat"
         ) {
           updateChatHeaderStatus();
         }
@@ -676,10 +693,6 @@
     await loadAttachments();
   }
 
-  /* =========================================================
-     ATTACHMENT RECORDS
-     ========================================================= */
-
   async function loadAttachments() {
     if (!state.messages.length) {
       state.attachments = {};
@@ -710,7 +723,9 @@
 
     (data || []).forEach((item) => {
       if (
-        !state.attachments[item.message_id]
+        !state.attachments[
+          item.message_id
+        ]
       ) {
         state.attachments[
           item.message_id
@@ -724,21 +739,27 @@
   }
 
   /* =========================================================
-     STORAGE
+     ATTACHMENTS
      ========================================================= */
 
   function getAttachmentType(file) {
     const type = file?.type || "";
 
-    if (type.startsWith("image/")) {
+    if (
+      type.startsWith("image/")
+    ) {
       return "image";
     }
 
-    if (type.startsWith("video/")) {
+    if (
+      type.startsWith("video/")
+    ) {
       return "video";
     }
 
-    if (type.startsWith("audio/")) {
+    if (
+      type.startsWith("audio/")
+    ) {
       return "audio";
     }
 
@@ -755,10 +776,6 @@
 
     return "file";
   }
-
-  /* =========================================================
-     REAL FILE UPLOAD
-     ========================================================= */
 
   async function uploadAttachment(file) {
     if (!file) return;
@@ -792,7 +809,7 @@
       !sessionData?.session?.access_token
     ) {
       alert(
-        "Leo Chat:\n\nYour session has expired. Please log in again."
+        "Your Leo Chat session has expired. Please log in again."
       );
       return;
     }
@@ -802,7 +819,7 @@
 
     if (file.size > MAX_FILE_SIZE) {
       alert(
-        "Leo Chat:\n\nThis file is larger than the 50 MB limit."
+        "This file is larger than the 50 MB limit."
       );
       return;
     }
@@ -825,17 +842,6 @@
     );
 
     try {
-      console.log(
-        "LEO: Starting upload",
-        {
-          bucket: MEDIA_BUCKET,
-          path: storagePath,
-          name: file.name,
-          type: file.type,
-          size: file.size
-        }
-      );
-
       const {
         data: uploadData,
         error: uploadError
@@ -852,12 +858,6 @@
               "application/octet-stream"
           }
         );
-
-      console.log(
-        "LEO: Upload result",
-        uploadData,
-        uploadError
-      );
 
       if (uploadError) {
         throw new Error(
@@ -892,8 +892,10 @@
       } = await db
         .from("messages")
         .insert({
-          sender_id: state.user.id,
-          receiver_id: state.chat.id,
+          sender_id:
+            state.user.id,
+          receiver_id:
+            state.chat.id,
           message: messageLabel
         })
         .select()
@@ -916,14 +918,19 @@
       } = await db
         .from("message_attachments")
         .insert({
-          message_id: message.id,
-          sender_id: state.user.id,
-          file_name: file.name,
-          file_path: storagePath,
+          message_id:
+            message.id,
+          sender_id:
+            state.user.id,
+          file_name:
+            file.name,
+          file_path:
+            storagePath,
           mime_type:
             file.type ||
             "application/octet-stream",
-          file_size: file.size,
+          file_size:
+            file.size,
           attachment_type:
             attachmentType
         })
@@ -941,11 +948,6 @@
         );
       }
 
-      console.log(
-        "LEO: Attachment saved",
-        attachment
-      );
-
       delete state.attachmentUrls[
         storagePath
       ];
@@ -960,25 +962,18 @@
 
     } catch (error) {
       console.error(
-        "LEO REAL ATTACHMENT ERROR:",
+        "LEO ATTACHMENT ERROR:",
         error
       );
 
-      alert(
-        "Leo Chat attachment error:\n\n" +
-          (
-            error?.message ||
-            String(error)
-          )
+      toast(
+        error?.message ||
+          "Attachment could not be sent."
       );
 
       restoreMessageDraft();
     }
   }
-
-  /* =========================================================
-     SIGNED URL
-     ========================================================= */
 
   async function getAttachmentUrl(path) {
     if (!path) return null;
@@ -1040,20 +1035,20 @@
 
   window.openAttachment =
     async (
-      path,
-      type
+      path
     ) => {
       if (!path) return;
 
-      toast("Opening...");
-
       const url =
-        await getAttachmentUrl(path);
+        await getAttachmentUrl(
+          path
+        );
 
       if (!url) {
-        return toast(
+        toast(
           "Could not open attachment."
         );
+        return;
       }
 
       window.open(
@@ -1071,11 +1066,6 @@
         attachment.file_path
       );
 
-    const safeType =
-      encodeURIComponent(
-        attachment.attachment_type
-      );
-
     if (
       attachment.attachment_type ===
       "image"
@@ -1086,8 +1076,7 @@
             class="attachment-image"
             onclick="
               openAttachment(
-                decodeURIComponent('${safePath}'),
-                decodeURIComponent('${safeType}')
+                decodeURIComponent('${safePath}')
               )
             "
           >
@@ -1114,8 +1103,7 @@
           class="attachment-image"
           onclick="
             openAttachment(
-              decodeURIComponent('${safePath}'),
-              decodeURIComponent('${safeType}')
+              decodeURIComponent('${safePath}')
             )
           "
         >
@@ -1126,61 +1114,26 @@
       `;
     }
 
-    if (
+    const attachmentIcon =
       attachment.attachment_type ===
       "video"
-    ) {
-      return `
-        <button
-          class="attachment-file"
-          onclick="
-            openAttachment(
-              decodeURIComponent('${safePath}'),
-              decodeURIComponent('${safeType}')
-            )
-          "
-        >
-          🎥
-          <span>
-            ${esc(attachment.file_name)}
-          </span>
-        </button>
-      `;
-    }
-
-    if (
-      attachment.attachment_type ===
-      "audio"
-    ) {
-      return `
-        <button
-          class="attachment-file"
-          onclick="
-            openAttachment(
-              decodeURIComponent('${safePath}'),
-              decodeURIComponent('${safeType}')
-            )
-          "
-        >
-          🎵
-          <span>
-            ${esc(attachment.file_name)}
-          </span>
-        </button>
-      `;
-    }
+        ? "🎥"
+        : attachment.attachment_type ===
+          "audio"
+        ? "🎵"
+        : "📎";
 
     return `
       <button
         class="attachment-file"
         onclick="
           openAttachment(
-            decodeURIComponent('${safePath}'),
-            decodeURIComponent('${safeType}')
+            decodeURIComponent('${safePath}')
           )
         "
       >
-        📎
+        ${attachmentIcon}
+
         <span>
           ${esc(
             attachment.file_name
@@ -1222,7 +1175,7 @@
   }
 
   /* =========================================================
-     CHAT MESSAGE UPDATE ONLY
+     CHAT DOM UPDATE ONLY
      ========================================================= */
 
   async function updateChatMessages() {
@@ -1242,6 +1195,9 @@
       return;
     }
 
+    const savedDraft =
+      captureMessageDraft();
+
     await prepareAttachmentUrls();
 
     if (
@@ -1252,25 +1208,9 @@
       return;
     }
 
-    const currentChat =
-      document.querySelector(
-        ".chat"
-      );
-
-    if (
-      currentChat &&
-      currentChat.dataset.chatId !==
-        state.chat.id
-    ) {
-      return;
-    }
-
-    const msgs =
-      state.messages || [];
-
     messagesElement.innerHTML =
-      msgs.length
-        ? msgs
+      state.messages.length
+        ? state.messages
             .map(
               (m) =>
                 renderMessage(m)
@@ -1281,6 +1221,10 @@
               Start the conversation 🦁
             </div>
           `;
+
+    messageDraft = savedDraft;
+
+    restoreMessageDraft();
 
     scrollChatToBottom();
   }
@@ -1356,21 +1300,21 @@
           const oldMessages =
             state.messages || [];
 
-          const oldMessageCount =
+          const oldCount =
             oldMessages.length;
 
-          const oldLastMessage =
-            oldMessageCount
+          const oldLast =
+            oldCount
               ? oldMessages[
-                  oldMessageCount - 1
+                  oldCount - 1
                 ]
               : null;
 
-          const oldLastMessageId =
-            oldLastMessage?.id || null;
+          const oldId =
+            oldLast?.id || null;
 
-          const oldLastMessageTime =
-            oldLastMessage?.created_at ||
+          const oldTime =
+            oldLast?.created_at ||
             null;
 
           await getMessages();
@@ -1378,32 +1322,29 @@
           const newMessages =
             state.messages || [];
 
-          const newMessageCount =
+          const newCount =
             newMessages.length;
 
-          const newLastMessage =
-            newMessageCount
+          const newLast =
+            newCount
               ? newMessages[
-                  newMessageCount - 1
+                  newCount - 1
                 ]
               : null;
 
-          const newLastMessageId =
-            newLastMessage?.id || null;
+          const newId =
+            newLast?.id || null;
 
-          const newLastMessageTime =
-            newLastMessage?.created_at ||
+          const newTime =
+            newLast?.created_at ||
             null;
 
-          const messagesChanged =
-            oldMessageCount !==
-              newMessageCount ||
-            oldLastMessageId !==
-              newLastMessageId ||
-            oldLastMessageTime !==
-              newLastMessageTime;
+          const changed =
+            oldCount !== newCount ||
+            oldId !== newId ||
+            oldTime !== newTime;
 
-          if (messagesChanged) {
+          if (changed) {
             await updateChatMessages();
           }
 
@@ -1414,13 +1355,23 @@
           return;
         }
 
+        /*
+          Never render setup here.
+          Never render chat here.
+        */
+
         if (
-          state.screen === "home" ||
+          state.screen === "home"
+        ) {
+          await loadPresence();
+          await renderHome();
+        }
+
+        if (
           state.screen === "search"
         ) {
           await loadPresence();
-
-          render();
+          filterPeople();
         }
 
       },
@@ -1429,7 +1380,7 @@
   }
 
   /* =========================================================
-     REALTIME MESSAGES
+     REALTIME
      ========================================================= */
 
   async function startMessageRealtime() {
@@ -1556,7 +1507,14 @@
      NAVIGATION
      ========================================================= */
 
-  window.go = async (screen) => {
+  window.go = async (
+    screen
+  ) => {
+    /*
+      Do not navigate away from profile setup
+      while the user is typing.
+    */
+
     if (
       profileFormActive &&
       state.screen === "setup" &&
@@ -1573,12 +1531,16 @@
 
     state.screen = screen;
 
-    if (screen !== "chat") {
+    if (
+      screen !== "chat"
+    ) {
       messageDraft = "";
       chatRenderToken++;
     }
 
-    if (screen !== "search") {
+    if (
+      screen !== "search"
+    ) {
       searchDraft = "";
     }
 
@@ -1596,27 +1558,29 @@
           (p) => p.id === id
         );
 
-      if (!person) {
-        await getProfiles();
-
-        const found =
-          state.profiles.find(
-            (p) => p.id === id
-          );
-
-        if (!found) {
-          return toast(
-            "User could not be found."
-          );
-        }
-
-        return window.openChat(
-          found
+      if (person) {
+        await window.openChat(
+          person
         );
+        return;
+      }
+
+      await getProfiles();
+
+      const found =
+        state.profiles.find(
+          (p) => p.id === id
+        );
+
+      if (!found) {
+        toast(
+          "User could not be found."
+        );
+        return;
       }
 
       await window.openChat(
-        person
+        found
       );
     };
 
@@ -1626,6 +1590,7 @@
     ) => {
       messageDraft = "";
       searchDraft = "";
+
       chatRenderToken++;
 
       state.chat = person;
@@ -1642,6 +1607,7 @@
   window.logout =
     async () => {
       profileFormActive = false;
+
       messageDraft = "";
       searchDraft = "";
 
@@ -1685,7 +1651,7 @@
     };
 
   /* =========================================================
-     AUTH SCREEN
+     AUTH
      ========================================================= */
 
   function renderAuth() {
@@ -1783,7 +1749,7 @@
       );
 
       try {
-        const r =
+        const result =
           mode === "signup"
             ? await db.auth.signUp({
                 email,
@@ -1794,14 +1760,14 @@
                 password
               });
 
-        if (r.error) {
+        if (result.error) {
           return toast(
-            r.error.message
+            result.error.message
           );
         }
 
         state.user =
-          r.data.user;
+          result.data.user;
 
         if (!state.user) {
           return toast(
@@ -1843,15 +1809,25 @@
   function renderSetup() {
     state.screen = "setup";
 
-    const existingUsername =
-      document.getElementById("uname");
+    /*
+      CRITICAL:
+      If the profile inputs already exist,
+      NEVER rebuild the screen.
+    */
 
-    const existingDisplayName =
-      document.getElementById("dname");
+    const usernameInput =
+      document.getElementById(
+        "uname"
+      );
+
+    const displayInput =
+      document.getElementById(
+        "dname"
+      );
 
     if (
-      existingUsername &&
-      existingDisplayName
+      usernameInput &&
+      displayInput
     ) {
       profileFormActive = true;
       return;
@@ -1925,18 +1901,25 @@
 
       const username =
         document
-          .getElementById("uname")
+          .getElementById(
+            "uname"
+          )
           ?.value
           .trim()
           .toLowerCase();
 
       const display_name =
         document
-          .getElementById("dname")
+          .getElementById(
+            "dname"
+          )
           ?.value
           .trim();
 
-      if (!username || !display_name) {
+      if (
+        !username ||
+        !display_name
+      ) {
         return toast(
           "Complete your profile."
         );
@@ -1965,8 +1948,6 @@
           "Saving...";
       }
 
-      profileFormActive = true;
-
       try {
         const {
           data,
@@ -1975,7 +1956,8 @@
           .from("profiles")
           .insert({
             id: state.user.id,
-            username: cleanUsername,
+            username:
+              cleanUsername,
             display_name,
             avatar: "🦁"
           })
@@ -1983,11 +1965,6 @@
           .single();
 
         if (error) {
-          console.error(
-            "PROFILE SAVE ERROR:",
-            error
-          );
-
           if (button) {
             button.disabled = false;
             button.textContent =
@@ -2001,7 +1978,8 @@
 
         state.profile = data;
 
-        profileFormActive = false;
+        profileFormActive =
+          false;
 
         await ensurePresence();
         await getProfiles();
@@ -2011,11 +1989,6 @@
         render();
 
       } catch (error) {
-        console.error(
-          "PROFILE SAVE EXCEPTION:",
-          error
-        );
-
         if (button) {
           button.disabled = false;
           button.textContent =
@@ -2039,7 +2012,9 @@
       loadPresence()
     ]);
 
-    if (state.screen !== "home") {
+    if (
+      state.screen !== "home"
+    ) {
       return;
     }
 
@@ -2224,20 +2199,26 @@
      ========================================================= */
 
   function renderSearch() {
-    const existingSearch =
-      document.querySelector(
-        ".search-screen"
+    const existingInput =
+      document.getElementById(
+        "q"
       );
 
-    const existingInput =
-      document.getElementById("q");
+    const existingResults =
+      document.getElementById(
+        "results"
+      );
+
+    /*
+      CRITICAL:
+      Never rebuild the search screen
+      while the user is typing.
+    */
 
     if (
-      existingSearch &&
       existingInput &&
-      existingInput.isConnected
+      existingResults
     ) {
-      captureSearchDraft();
       filterPeople();
       return;
     }
@@ -2269,7 +2250,9 @@
                   searchDraft
                 )}"
                 oninput="
-                  updateSearchDraft(this.value);
+                  updateSearchDraft(
+                    this.value
+                  );
                   filterPeople()
                 "
               >
@@ -2289,117 +2272,152 @@
     filterPeople();
   }
 
+  let searchTimer = null;
+
   async function filterPeople() {
     captureSearchDraft();
 
-    await Promise.all([
-      getProfiles(),
-      loadPresence()
-    ]);
+    clearTimeout(
+      searchTimer
+    );
 
-    if (
-      state.screen !== "search"
-    ) {
-      return;
-    }
+    searchTimer = setTimeout(
+      async () => {
 
-    const q =
-      searchDraft
-        .toLowerCase()
-        .trim();
+        await Promise.all([
+          getProfiles(),
+          loadPresence()
+        ]);
 
-    const arr =
-      state.profiles.filter(
-        (p) =>
-          p.id !== state.user.id &&
-          `${p.display_name} ${p.username}`
+        if (
+          state.screen !==
+          "search"
+        ) {
+          return;
+        }
+
+        const q =
+          searchDraft
             .toLowerCase()
-            .includes(q)
-      );
+            .trim();
 
-    const r =
-      document.getElementById(
-        "results"
-      );
+        const arr =
+          state.profiles.filter(
+            (p) =>
+              p.id !==
+                state.user.id &&
+              `${p.display_name} ${p.username}`
+                .toLowerCase()
+                .includes(q)
+          );
 
-    if (!r) return;
+        const results =
+          document.getElementById(
+            "results"
+          );
 
-    r.innerHTML =
-      arr
-        .map(
-          (p) => {
-            const online =
-              isOnline(p.id);
+        const input =
+          document.getElementById(
+            "q"
+          );
 
-            return `
-              <div
-                class="listitem"
-                onclick="
-                  openChatById('${esc(
+        if (!results) {
+          return;
+        }
+
+        results.innerHTML =
+          arr
+            .map(
+              (p) => {
+                const online =
+                  isOnline(
                     p.id
-                  )}')
-                "
-              >
+                  );
 
-                <div class="avatar">
-                  ${esc(
-                    p.avatar ||
-                      "🦁"
-                  )}
-                </div>
+                return `
+                  <div
+                    class="listitem"
+                    onclick="
+                      openChatById('${esc(
+                        p.id
+                      )}')
+                    "
+                  >
 
-                <div class="grow">
+                    <div class="avatar">
+                      ${esc(
+                        p.avatar ||
+                          "🦁"
+                      )}
+                    </div>
 
-                  <div class="name">
-                    ${esc(
-                      p.display_name
-                    )}
+                    <div class="grow">
+
+                      <div class="name">
+                        ${esc(
+                          p.display_name
+                        )}
+                      </div>
+
+                      <div class="sub">
+                        @${esc(
+                          p.username
+                        )}
+                      </div>
+
+                      <div class="online-status">
+
+                        <span
+                          class="status-dot ${
+                            online
+                              ? "online"
+                              : "offline"
+                          }"
+                        ></span>
+
+                        ${
+                          online
+                            ? "Online"
+                            : formatLastSeen(
+                                state
+                                  .presence[
+                                  p.id
+                                ]
+                                  ?.last_seen_at
+                              )
+                        }
+
+                      </div>
+
+                    </div>
+
                   </div>
+                `;
+              }
+            )
+            .join("") ||
+          `
+            <div class="empty">
+              No matches.
+            </div>
+          `;
 
-                  <div class="sub">
-                    @${esc(
-                      p.username
-                    )}
-                  </div>
+        /*
+          Restore the exact search text
+          after results update.
+        */
 
-                  <div class="online-status">
+        if (
+          input &&
+          input.isConnected
+        ) {
+          input.value =
+            searchDraft;
+        }
 
-                    <span
-                      class="status-dot ${
-                        online
-                          ? "online"
-                          : "offline"
-                      }"
-                    ></span>
-
-                    ${
-                      online
-                        ? "Online"
-                        : formatLastSeen(
-                            state
-                              .presence[
-                              p.id
-                            ]
-                              ?.last_seen_at
-                          )
-                    }
-
-                  </div>
-
-                </div>
-
-              </div>
-            `;
-          }
-        )
-        .join("") ||
-      `
-        <div class="empty">
-          No matches.
-        </div>
-      `;
-
-    restoreSearchDraft();
+      },
+      150
+    );
   }
 
   /* =========================================================
@@ -2407,10 +2425,13 @@
      ========================================================= */
 
   async function renderChat() {
-    const p = state.chat;
+    const person =
+      state.chat;
 
-    if (!p) {
-      state.screen = "home";
+    if (!person) {
+      state.screen =
+        "home";
+
       return renderHome();
     }
 
@@ -2420,11 +2441,20 @@
       );
 
     const existingChatId =
-      existingChat?.dataset?.chatId;
+      existingChat?.dataset
+        ?.chatId;
+
+    /*
+      CRITICAL:
+      If chat already exists, only
+      update messages. Do NOT rebuild
+      the composer.
+    */
 
     if (
       existingChat &&
-      existingChatId === p.id
+      existingChatId ===
+        person.id
     ) {
       await updateChatMessages();
       updateChatHeaderStatus();
@@ -2441,16 +2471,19 @@
         chatRenderToken ||
       state.screen !== "chat" ||
       !state.chat ||
-      state.chat.id !== p.id
+      state.chat.id !==
+        person.id
     ) {
       return;
     }
 
-    const msgs =
+    const messages =
       state.messages || [];
 
     const online =
-      isOnline(p.id);
+      isOnline(
+        person.id
+      );
 
     app.innerHTML =
       layout(
@@ -2458,7 +2491,7 @@
           <div
             class="chat"
             data-chat-id="${esc(
-              p.id
+              person.id
             )}"
           >
 
@@ -2475,7 +2508,7 @@
 
               <div class="avatar">
                 ${esc(
-                  p.avatar ||
+                  person.avatar ||
                     "🦁"
                 )}
               </div>
@@ -2484,7 +2517,7 @@
 
                 <div class="name">
                   ${esc(
-                    p.display_name
+                    person.display_name
                   )}
                 </div>
 
@@ -2504,7 +2537,7 @@
                       : formatLastSeen(
                           state
                             .presence[
-                            p.id
+                            person.id
                           ]
                             ?.last_seen_at
                         )
@@ -2542,11 +2575,13 @@
             >
 
               ${
-                msgs.length
-                  ? msgs
+                messages.length
+                  ? messages
                       .map(
                         (m) =>
-                          renderMessage(m)
+                          renderMessage(
+                            m
+                          )
                       )
                       .join("")
                   : `
@@ -2605,7 +2640,9 @@
                   messageDraft
                 )}"
                 oninput="
-                  updateMessageDraft(this.value)
+                  updateMessageDraft(
+                    this.value
+                  )
                 "
                 onkeydown="
                   if(
@@ -2639,12 +2676,14 @@
     scrollChatToBottom();
   }
 
-  function renderMessage(message) {
+  function renderMessage(
+    message
+  ) {
     const mine =
       message.sender_id ===
       state.user.id;
 
-    const list =
+    const attachments =
       state.attachments[
         message.id
       ] || [];
@@ -2671,12 +2710,11 @@
         }
 
         ${
-          list.length
+          attachments.length
             ? `
-                <div
-                  class="attachment-list"
-                >
-                  ${list
+                <div class="attachment-list">
+
+                  ${attachments
                     .map(
                       (attachment) =>
                         renderAttachment(
@@ -2684,6 +2722,7 @@
                         )
                     )
                     .join("")}
+
                 </div>
               `
             : ""
@@ -2713,22 +2752,26 @@
 
   window.sendMsg =
     async () => {
-      if (sendingMessage) {
+      if (
+        sendingMessage
+      ) {
         return;
       }
 
-      const el =
+      const input =
         document.getElementById(
           "msg"
         );
 
-      const rawText =
-        el?.value ?? messageDraft;
-
       const text =
-        rawText.trim();
+        (
+          input?.value ??
+          messageDraft
+        ).trim();
 
-      if (!text) return;
+      if (!text) {
+        return;
+      }
 
       if (
         !state.user ||
@@ -2738,28 +2781,30 @@
       }
 
       messageDraft = text;
+
       sendingMessage = true;
 
-      const sendButton =
+      const button =
         document.querySelector(
           ".send"
         );
 
-      if (sendButton) {
-        sendButton.disabled = true;
+      if (button) {
+        button.disabled = true;
       }
 
       try {
-        const { error } =
-          await db
-            .from("messages")
-            .insert({
-              sender_id:
-                state.user.id,
-              receiver_id:
-                state.chat.id,
-              message: text
-            });
+        const {
+          error
+        } = await db
+          .from("messages")
+          .insert({
+            sender_id:
+              state.user.id,
+            receiver_id:
+              state.chat.id,
+            message: text
+          });
 
         if (error) {
           throw error;
@@ -2767,13 +2812,8 @@
 
         messageDraft = "";
 
-        const currentInput =
-          document.getElementById(
-            "msg"
-          );
-
-        if (currentInput) {
-          currentInput.value = "";
+        if (input) {
+          input.value = "";
         }
 
         await getMessages();
@@ -2781,6 +2821,7 @@
         await updatePresenceActivity();
 
       } catch (error) {
+
         messageDraft = text;
 
         const currentInput =
@@ -2808,30 +2849,30 @@
         );
 
       } finally {
+
         sendingMessage = false;
 
-        const currentSendButton =
+        const currentButton =
           document.querySelector(
             ".send"
           );
 
-        if (
-          currentSendButton
-        ) {
-          currentSendButton.disabled =
+        if (currentButton) {
+          currentButton.disabled =
             false;
         }
       }
     };
 
   /* =========================================================
-     PHOTO / FILE PICKER
+     FILE / PHOTO HANDLER
      ========================================================= */
 
   window.handleAttachments =
     async (
       event
     ) => {
+
       const input =
         event?.target;
 
@@ -2849,11 +2890,6 @@
       if (!files.length) {
         return;
       }
-
-      console.log(
-        "LEO: Selected files:",
-        files
-      );
 
       for (
         const file of files
@@ -2888,11 +2924,11 @@
 
   window.callUser =
     (
-      kind
+      type
     ) => {
       toast(
         `${
-          kind === "video"
+          type === "video"
             ? "Video"
             : "Voice"
         } calling will be connected in the WebRTC call module.`
@@ -2902,6 +2938,7 @@
   window.leaveChat =
     async () => {
       messageDraft = "";
+
       chatRenderToken++;
 
       state.chat = null;
@@ -3020,24 +3057,25 @@
 
   window.addMoment =
     (
-      e
+      event
     ) => {
-      const f =
-        e.target?.files?.[0];
+      const file =
+        event.target?.files?.[0];
 
-      if (!f) return;
+      if (!file) return;
 
-      const r =
+      const reader =
         new FileReader();
 
-      r.onload = () => {
+      reader.onload = () => {
+
         const text =
           prompt(
             "Moment caption"
           ) || "";
 
         state.moments.unshift({
-          src: r.result,
+          src: reader.result,
           text,
           at: Date.now()
         });
@@ -3052,9 +3090,11 @@
         renderMoments();
       };
 
-      r.readAsDataURL(f);
+      reader.readAsDataURL(
+        file
+      );
 
-      e.target.value = "";
+      event.target.value = "";
     };
 
   /* =========================================================
@@ -3078,16 +3118,10 @@
 
             <div class="content">
 
-              <div
-                class="card center"
-              >
+              <div class="card center">
 
                 <img
                   class="logo"
-                  style="
-                    width:80px;
-                    height:80px
-                  "
                   src="./logo.svg"
                 >
 
@@ -3422,6 +3456,10 @@
       return;
     }
 
+    /*
+      Profile setup has priority and is protected.
+    */
+
     if (!state.profile) {
       state.screen = "setup";
       renderSetup();
@@ -3466,7 +3504,8 @@
     }
 
     if (
-      state.screen === "notifications"
+      state.screen ===
+      "notifications"
     ) {
       renderNotifications();
       return;
@@ -3486,7 +3525,9 @@
       return;
     }
 
-    const { data } =
+    const {
+      data
+    } =
       db.auth.onAuthStateChange(
         async (
           event,
@@ -3510,7 +3551,9 @@
 
           if (!state.user) {
 
-            profileFormActive = false;
+            profileFormActive =
+              false;
+
             messageDraft = "";
             searchDraft = "";
 
@@ -3525,6 +3568,14 @@
 
             return;
           }
+
+          /*
+            IMPORTANT:
+            Supabase can fire an auth event
+            while the profile form is open.
+
+            Never rebuild the form while typing.
+          */
 
           if (
             sameUser &&
@@ -3567,7 +3618,8 @@
             await startMessageRealtime();
             startPolling();
 
-            appInitialized = true;
+            appInitialized =
+              true;
           }
 
           if (
@@ -3717,7 +3769,7 @@
   }
 
   /* =========================================================
-     PAGE VISIBILITY
+     VISIBILITY
      ========================================================= */
 
   window.addEventListener(
@@ -3740,6 +3792,7 @@
         document.visibilityState ===
         "visible"
       ) {
+
         await ensurePresence();
 
         if (presenceChannel) {
