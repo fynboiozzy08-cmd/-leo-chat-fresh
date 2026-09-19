@@ -1,17 +1,20 @@
-alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
+alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT + SEARCH FIX");
 
 (() => {
   /* =========================================================
      LEO CHAT — WEB APP
      Stable version
 
-     IMPORTANT FIXES:
+     FIXES:
      - Chat composer is created only once
      - Typing is never destroyed by polling
      - Realtime updates never rebuild the composer
      - Attachment uploads never rebuild the composer
      - Failed sends restore the message
      - Message updates only replace #messages
+     - Search input is created only once
+     - Search typing is never destroyed by polling
+     - Search results update without rebuilding #q
      - Profile setup remains protected
      ========================================================= */
 
@@ -99,6 +102,11 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
     Current message being typed.
   */
   let messageDraft = "";
+
+  /*
+    Current search text.
+  */
+  let searchDraft = "";
 
   /*
     Prevent stale async chat renders.
@@ -254,6 +262,34 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
     if (!input) return;
 
     input.value = messageDraft;
+  }
+
+  /* =========================================================
+     SEARCH DRAFT
+     ========================================================= */
+
+  window.updateSearchDraft = (value) => {
+    searchDraft = String(value ?? "");
+  };
+
+  function captureSearchDraft() {
+    const input =
+      document.getElementById("q");
+
+    if (input) {
+      searchDraft = input.value;
+    }
+
+    return searchDraft;
+  }
+
+  function restoreSearchDraft() {
+    const input =
+      document.getElementById("q");
+
+    if (!input) return;
+
+    input.value = searchDraft;
   }
 
   /* =========================================================
@@ -439,6 +475,10 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
               };
             });
 
+            /*
+              Search is safe now because renderSearch()
+              no longer destroys #q.
+            */
             if (
               state.screen === "home" ||
               state.screen === "search"
@@ -539,18 +579,29 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
         await loadPresence();
 
         /*
-          NEVER render the whole chat from presence polling.
+          HOME:
+          Re-render is okay because there is no
+          typing field that needs protection.
         */
         if (
-          state.screen === "home" ||
+          state.screen === "home"
+        ) {
+          render();
+        }
+
+        /*
+          SEARCH:
+          renderSearch() now preserves #q.
+        */
+        if (
           state.screen === "search"
         ) {
           render();
         }
 
         /*
-          Update chat status without rebuilding
-          the chat or message input.
+          CHAT:
+          Never rebuild chat.
         */
         if (
           state.screen === "chat" &&
@@ -756,9 +807,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
       return;
     }
 
-    /*
-      Capture the message BEFORE the upload.
-    */
     captureMessageDraft();
 
     const {
@@ -942,10 +990,7 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
 
       /*
         IMPORTANT:
-        Do NOT call renderChat() here.
-        That would destroy the message input.
-
-        Instead, only update the message list.
+        Never call renderChat().
       */
       await getMessages();
       await updateChatMessages();
@@ -965,9 +1010,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
           )
       );
 
-      /*
-        Keep typed text intact after failure.
-      */
       restoreMessageDraft();
     }
   }
@@ -1219,10 +1261,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
 
   /* =========================================================
      CHAT MESSAGE UPDATE ONLY
-     
-     THIS IS THE MAIN FIX.
-     
-     It updates #messages without touching #msg.
      ========================================================= */
 
   async function updateChatMessages() {
@@ -1239,26 +1277,28 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
       );
 
     if (!messagesElement) {
-      /*
-        If the chat shell does not exist yet,
-        the full chat renderer will create it.
-      */
       return;
     }
 
-    /*
-      Load signed image URLs before replacing
-      only the message list.
-    */
     await prepareAttachmentUrls();
 
-    /*
-      Make sure the user is still in the same chat.
-    */
     if (
       state.screen !== "chat" ||
       !state.chat ||
       !messagesElement.isConnected
+    ) {
+      return;
+    }
+
+    const currentChat =
+      document.querySelector(
+        ".chat"
+      );
+
+    if (
+      currentChat &&
+      currentChat.dataset.chatId !==
+        state.chat.id
     ) {
       return;
     }
@@ -1351,11 +1391,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
         if (
           state.screen === "chat"
         ) {
-          /*
-            DO NOT rebuild the chat.
-            The input must stay alive.
-          */
-
           const oldMessages =
             state.messages || [];
 
@@ -1412,10 +1447,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
 
           await loadPresence();
 
-          /*
-            Update only the header status.
-            Never touch the composer.
-          */
           updateChatHeaderStatus();
 
           return;
@@ -1426,6 +1457,11 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
           state.screen === "search"
         ) {
           await loadPresence();
+
+          /*
+            renderSearch() now preserves
+            the search input.
+          */
           render();
         }
 
@@ -1464,20 +1500,13 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
             filter:
               `receiver_id=eq.${state.user.id}`
           },
-          async (payload) => {
+          async () => {
 
             if (
               state.screen === "chat"
             ) {
-              /*
-                IMPORTANT:
-                Do NOT capture/restore by rebuilding
-                the chat. The input remains alive.
-              */
-
               await getMessages();
               await updateChatMessages();
-
             } else {
               addNotification(
                 "New message",
@@ -1578,11 +1607,28 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
       return;
     }
 
+    /*
+      Save search text before leaving search.
+    */
+    if (
+      state.screen === "search"
+    ) {
+      captureSearchDraft();
+    }
+
     state.screen = screen;
 
     if (screen !== "chat") {
       messageDraft = "";
       chatRenderToken++;
+    }
+
+    /*
+      Clear search only when intentionally
+      leaving the search section.
+    */
+    if (screen !== "search") {
+      searchDraft = "";
     }
 
     await updatePresenceActivity();
@@ -1628,6 +1674,7 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
       person
     ) => {
       messageDraft = "";
+      searchDraft = "";
       chatRenderToken++;
 
       state.chat = person;
@@ -1645,6 +1692,7 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
     async () => {
       profileFormActive = false;
       messageDraft = "";
+      searchDraft = "";
 
       chatRenderToken++;
 
@@ -2222,13 +2270,41 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
 
   /* =========================================================
      SEARCH
+     
+     IMPORTANT:
+     The search shell is created only once.
+     Polling updates only #results.
      ========================================================= */
 
   function renderSearch() {
+    const existingSearch =
+      document.querySelector(
+        ".search-screen"
+      );
+
+    const existingInput =
+      document.getElementById("q");
+
+    /*
+      If search already exists, NEVER rebuild it.
+      This keeps the user's typed text alive.
+    */
+    if (
+      existingSearch &&
+      existingInput &&
+      existingInput.isConnected
+    ) {
+      captureSearchDraft();
+      filterPeople();
+      return;
+    }
+
     app.innerHTML =
       layout(
         `
-          <div class="screen">
+          <div
+            class="screen search-screen"
+          >
 
             <div class="top">
 
@@ -2245,7 +2321,12 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
                 id="q"
                 class="input search"
                 placeholder="Search people..."
+                autocomplete="off"
+                value="${esc(
+                  searchDraft
+                )}"
                 oninput="
+                  updateSearchDraft(this.value);
                   filterPeople()
                 "
               >
@@ -2260,22 +2341,36 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
         `
       );
 
+    restoreSearchDraft();
+
     filterPeople();
   }
 
   async function filterPeople() {
+    /*
+      Do NOT destroy the search input.
+    */
+    captureSearchDraft();
+
     await Promise.all([
       getProfiles(),
       loadPresence()
     ]);
 
+    /*
+      Make sure user has not left search while
+      async database requests were running.
+    */
+    if (
+      state.screen !== "search"
+    ) {
+      return;
+    }
+
     const q =
-      (
-        document
-          .getElementById("q")
-          ?.value ||
-        ""
-      ).toLowerCase();
+      searchDraft
+        .toLowerCase()
+        .trim();
 
     const arr =
       state.profiles.filter(
@@ -2367,17 +2462,16 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
           No matches.
         </div>
       `;
+
+    /*
+      Restore the exact text after async loading.
+      This protects against any accidental DOM changes.
+    */
+    restoreSearchDraft();
   }
 
   /* =========================================================
      CHAT
-     
-     CRITICAL ARCHITECTURE:
-     
-     The chat shell + composer are created once.
-     
-     Message updates use updateChatMessages()
-     and NEVER replace the composer.
      ========================================================= */
 
   async function renderChat() {
@@ -2389,8 +2483,8 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
     }
 
     /*
-      If the chat shell already exists for the same
-      person, DO NOT rebuild it.
+      If chat already exists for this person,
+      NEVER rebuild it.
     */
     const existingChat =
       document.querySelector(
@@ -2409,20 +2503,11 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
       return;
     }
 
-    /*
-      New chat shell.
-    */
     const renderToken =
       ++chatRenderToken;
 
-    /*
-      Load signed URLs before creating the shell.
-    */
     await prepareAttachmentUrls();
 
-    /*
-      Ignore stale async render.
-    */
     if (
       renderToken !==
         chatRenderToken ||
@@ -2621,9 +2706,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
         false
       );
 
-    /*
-      Restore the draft after initial shell creation.
-    */
     restoreMessageDraft();
 
     scrollChatToBottom();
@@ -2755,10 +2837,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
           throw error;
         }
 
-        /*
-          Only clear the composer AFTER
-          successful database insertion.
-        */
         messageDraft = "";
 
         const currentInput =
@@ -2770,19 +2848,11 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
           currentInput.value = "";
         }
 
-        /*
-          Refresh messages only.
-          DO NOT renderChat().
-        */
         await getMessages();
         await updateChatMessages();
         await updatePresenceActivity();
 
       } catch (error) {
-        /*
-          Failed send:
-          restore text and focus.
-        */
         messageDraft = text;
 
         const currentInput =
@@ -2842,9 +2912,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
           input?.files || []
         );
 
-      /*
-        Save whatever the user has typed.
-      */
       captureMessageDraft();
 
       if (input) {
@@ -2868,11 +2935,6 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
         );
       }
 
-      /*
-        Composer was never destroyed,
-        but this makes absolutely sure
-        the text remains.
-      */
       restoreMessageDraft();
 
       const msg =
@@ -3522,6 +3584,7 @@ alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
 
             profileFormActive = false;
             messageDraft = "";
+            searchDraft = "";
 
             state.profile = null;
 
