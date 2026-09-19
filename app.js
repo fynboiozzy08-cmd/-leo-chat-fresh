@@ -1,17 +1,18 @@
-alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
+alert("LEO NEW APP.JS 20260919 — PERSISTENT CHAT COMPOSER FIX");
 
 (() => {
   /* =========================================================
      LEO CHAT — WEB APP
-     Cleaned + corrected version
+     Stable version
 
      IMPORTANT FIXES:
-     - Message typing is preserved during renders
-     - Polling does not constantly rebuild the chat
-     - Realtime updates preserve typed drafts
+     - Chat composer is created only once
+     - Typing is never destroyed by polling
+     - Realtime updates never rebuild the composer
+     - Attachment uploads never rebuild the composer
      - Failed sends restore the message
-     - Attachment uploads preserve typed drafts
-     - Profile setup remains protected from background events
+     - Message updates only replace #messages
+     - Profile setup remains protected
      ========================================================= */
 
   const cfg = window.LEO_CONFIG || {};
@@ -95,12 +96,19 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
   };
 
   /*
-    Stores the message currently being typed.
-
-    This is the main protection against losing text when
-    renderChat() has to rebuild the chat UI.
+    Current message being typed.
   */
   let messageDraft = "";
+
+  /*
+    Prevent stale async chat renders.
+  */
+  let chatRenderToken = 0;
+
+  /*
+    Prevent duplicate message sending.
+  */
+  let sendingMessage = false;
 
   let poll = null;
   let presencePoll = null;
@@ -108,15 +116,7 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
   let presenceChannel = null;
   let authSubscription = null;
 
-  /*
-    Prevent profile setup from being rebuilt while
-    the user is typing into the setup form.
-  */
   let profileFormActive = false;
-
-  /*
-    Prevent duplicate initialization.
-  */
   let appInitialized = false;
 
   /* =========================================================
@@ -231,13 +231,6 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
   /* =========================================================
      MESSAGE DRAFT
      ========================================================= */
-
-  /*
-    Keep the current text outside the DOM.
-
-    This is important because renderChat() replaces
-    app.innerHTML and therefore destroys the old input.
-  */
 
   window.updateMessageDraft = (value) => {
     messageDraft = String(value ?? "");
@@ -446,10 +439,6 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
               };
             });
 
-            /*
-              Do not rebuild the chat while typing.
-              Chat message updates have their own logic.
-            */
             if (
               state.screen === "home" ||
               state.screen === "search"
@@ -550,15 +539,24 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
         await loadPresence();
 
         /*
-          Home/search can safely rerender.
-          Chat does NOT rerender from presence polling.
-          This is another important typing protection.
+          NEVER render the whole chat from presence polling.
         */
         if (
           state.screen === "home" ||
           state.screen === "search"
         ) {
           render();
+        }
+
+        /*
+          Update chat status without rebuilding
+          the chat or message input.
+        */
+        if (
+          state.screen === "chat" &&
+          state.chat
+        ) {
+          updateChatHeaderStatus();
         }
       },
       10000
@@ -759,7 +757,7 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
     }
 
     /*
-      Capture anything being typed before async upload.
+      Capture the message BEFORE the upload.
     */
     captureMessageDraft();
 
@@ -942,8 +940,16 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
         "Attachment sent successfully."
       );
 
+      /*
+        IMPORTANT:
+        Do NOT call renderChat() here.
+        That would destroy the message input.
+
+        Instead, only update the message list.
+      */
       await getMessages();
-      await renderChat();
+      await updateChatMessages();
+      await updatePresenceActivity();
 
     } catch (error) {
       console.error(
@@ -958,6 +964,11 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
             String(error)
           )
       );
+
+      /*
+        Keep typed text intact after failure.
+      */
+      restoreMessageDraft();
     }
   }
 
@@ -1115,24 +1126,22 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
       attachment.attachment_type ===
       "video"
     ) {
-      if (attachment.signedUrl) {
-        return `
-          <button
-            class="attachment-file"
-            onclick="
-              openAttachment(
-                decodeURIComponent('${safePath}'),
-                decodeURIComponent('${safeType}')
-              )
-            "
-          >
-            🎥
-            <span>
-              ${esc(attachment.file_name)}
-            </span>
-          </button>
-        `;
-      }
+      return `
+        <button
+          class="attachment-file"
+          onclick="
+            openAttachment(
+              decodeURIComponent('${safePath}'),
+              decodeURIComponent('${safeType}')
+            )
+          "
+        >
+          🎥
+          <span>
+            ${esc(attachment.file_name)}
+          </span>
+        </button>
+      `;
     }
 
     if (
@@ -1209,6 +1218,127 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
   }
 
   /* =========================================================
+     CHAT MESSAGE UPDATE ONLY
+     
+     THIS IS THE MAIN FIX.
+     
+     It updates #messages without touching #msg.
+     ========================================================= */
+
+  async function updateChatMessages() {
+    if (
+      state.screen !== "chat" ||
+      !state.chat
+    ) {
+      return;
+    }
+
+    const messagesElement =
+      document.getElementById(
+        "messages"
+      );
+
+    if (!messagesElement) {
+      /*
+        If the chat shell does not exist yet,
+        the full chat renderer will create it.
+      */
+      return;
+    }
+
+    /*
+      Load signed image URLs before replacing
+      only the message list.
+    */
+    await prepareAttachmentUrls();
+
+    /*
+      Make sure the user is still in the same chat.
+    */
+    if (
+      state.screen !== "chat" ||
+      !state.chat ||
+      !messagesElement.isConnected
+    ) {
+      return;
+    }
+
+    const msgs =
+      state.messages || [];
+
+    messagesElement.innerHTML =
+      msgs.length
+        ? msgs
+            .map(
+              (m) =>
+                renderMessage(m)
+            )
+            .join("")
+        : `
+            <div class="empty">
+              Start the conversation 🦁
+            </div>
+          `;
+
+    scrollChatToBottom();
+  }
+
+  function scrollChatToBottom() {
+    const messagesElement =
+      document.getElementById(
+        "messages"
+      );
+
+    if (!messagesElement) return;
+
+    setTimeout(() => {
+      messagesElement.scrollTop =
+        messagesElement.scrollHeight;
+    }, 20);
+  }
+
+  function updateChatHeaderStatus() {
+    if (
+      state.screen !== "chat" ||
+      !state.chat
+    ) {
+      return;
+    }
+
+    const header =
+      document.querySelector(
+        ".chathead .sub"
+      );
+
+    if (!header) return;
+
+    const online =
+      isOnline(
+        state.chat.id
+      );
+
+    header.innerHTML = `
+      <span
+        class="status-dot ${
+          online
+            ? "online"
+            : "offline"
+        }"
+      ></span>
+
+      ${
+        online
+          ? "Online"
+          : formatLastSeen(
+              state.presence[
+                state.chat.id
+              ]?.last_seen_at
+            )
+      }
+    `;
+  }
+
+  /* =========================================================
      POLLING
      ========================================================= */
 
@@ -1222,11 +1352,9 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
           state.screen === "chat"
         ) {
           /*
-            IMPORTANT:
-            Capture what the user is typing before
-            doing any asynchronous work.
+            DO NOT rebuild the chat.
+            The input must stay alive.
           */
-          captureMessageDraft();
 
           const oldMessages =
             state.messages || [];
@@ -1250,10 +1378,6 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
 
           await getMessages();
 
-          /*
-            Only redraw the chat when something actually
-            changed in the message list.
-          */
           const newMessages =
             state.messages || [];
 
@@ -1283,16 +1407,18 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
               newLastMessageTime;
 
           if (messagesChanged) {
-            await renderChat();
+            await updateChatMessages();
           }
 
           await loadPresence();
 
           /*
-            Restore draft in case the DOM was changed
-            by another event during polling.
+            Update only the header status.
+            Never touch the composer.
           */
-          restoreMessageDraft();
+          updateChatHeaderStatus();
+
+          return;
         }
 
         if (
@@ -1302,6 +1428,7 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
           await loadPresence();
           render();
         }
+
       },
       5000
     );
@@ -1337,19 +1464,20 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
             filter:
               `receiver_id=eq.${state.user.id}`
           },
-          async () => {
+          async (payload) => {
+
             if (
               state.screen === "chat"
             ) {
               /*
-                Preserve text before realtime refresh.
+                IMPORTANT:
+                Do NOT capture/restore by rebuilding
+                the chat. The input remains alive.
               */
-              captureMessageDraft();
 
               await getMessages();
-              await renderChat();
+              await updateChatMessages();
 
-              restoreMessageDraft();
             } else {
               addNotification(
                 "New message",
@@ -1367,15 +1495,12 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
               "message_attachments"
           },
           async () => {
+
             if (
               state.screen === "chat"
             ) {
-              captureMessageDraft();
-
               await getMessages();
-              await renderChat();
-
-              restoreMessageDraft();
+              await updateChatMessages();
             }
           }
         )
@@ -1455,11 +1580,9 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
 
     state.screen = screen;
 
-    /*
-      Leaving a chat clears its draft.
-    */
     if (screen !== "chat") {
       messageDraft = "";
+      chatRenderToken++;
     }
 
     await updatePresenceActivity();
@@ -1504,10 +1627,8 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
     async (
       person
     ) => {
-      /*
-        Start a fresh draft for the selected chat.
-      */
       messageDraft = "";
+      chatRenderToken++;
 
       state.chat = person;
       state.screen = "chat";
@@ -1524,6 +1645,8 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
     async () => {
       profileFormActive = false;
       messageDraft = "";
+
+      chatRenderToken++;
 
       try {
         await markOffline();
@@ -2248,6 +2371,13 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
 
   /* =========================================================
      CHAT
+     
+     CRITICAL ARCHITECTURE:
+     
+     The chat shell + composer are created once.
+     
+     Message updates use updateChatMessages()
+     and NEVER replace the composer.
      ========================================================= */
 
   async function renderChat() {
@@ -2259,40 +2389,52 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
     }
 
     /*
-      Capture whatever is currently typed BEFORE
-      doing any asynchronous work.
+      If the chat shell already exists for the same
+      person, DO NOT rebuild it.
     */
-    captureMessageDraft();
+    const existingChat =
+      document.querySelector(
+        ".chat"
+      );
+
+    const existingChatId =
+      existingChat?.dataset?.chatId;
+
+    if (
+      existingChat &&
+      existingChatId === p.id
+    ) {
+      await updateChatMessages();
+      updateChatHeaderStatus();
+      return;
+    }
 
     /*
-      Keep focus state and cursor position.
+      New chat shell.
     */
-    const oldInput =
-      document.getElementById("msg");
-
-    const wasFocused =
-      oldInput &&
-      document.activeElement === oldInput;
-
-    const oldCursor =
-      oldInput &&
-      typeof oldInput.selectionStart === "number"
-        ? oldInput.selectionStart
-        : messageDraft.length;
+    const renderToken =
+      ++chatRenderToken;
 
     /*
-      This operation can take time because signed URLs
-      may need to be generated.
+      Load signed URLs before creating the shell.
     */
     await prepareAttachmentUrls();
 
     /*
-      Something may have happened while the async
-      operation was running, so capture the input again.
+      Ignore stale async render.
     */
-    captureMessageDraft();
+    if (
+      renderToken !==
+        chatRenderToken ||
+      state.screen !== "chat" ||
+      !state.chat ||
+      state.chat.id !== p.id
+    ) {
+      return;
+    }
 
-    const msgs = state.messages;
+    const msgs =
+      state.messages || [];
 
     const online =
       isOnline(p.id);
@@ -2300,7 +2442,12 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
     app.innerHTML =
       layout(
         `
-          <div class="chat">
+          <div
+            class="chat"
+            data-chat-id="${esc(
+              p.id
+            )}"
+          >
 
             <div class="chathead">
 
@@ -2475,60 +2622,11 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
       );
 
     /*
-      Restore the exact message draft.
+      Restore the draft after initial shell creation.
     */
-    const newInput =
-      document.getElementById("msg");
+    restoreMessageDraft();
 
-    if (newInput) {
-      newInput.value =
-        messageDraft;
-
-      /*
-        Restore focus if the user was actively
-        typing before the render.
-      */
-      if (wasFocused) {
-        setTimeout(() => {
-          const current =
-            document.getElementById(
-              "msg"
-            );
-
-          if (!current) return;
-
-          current.focus();
-
-          try {
-            const position =
-              Math.min(
-                oldCursor,
-                current.value.length
-              );
-
-            current.setSelectionRange(
-              position,
-              position
-            );
-          } catch {}
-        }, 0);
-      }
-    }
-
-    /*
-      Keep the messages scrolled to the bottom.
-    */
-    setTimeout(() => {
-      const m =
-        document.getElementById(
-          "messages"
-        );
-
-      if (m) {
-        m.scrollTop =
-          m.scrollHeight;
-      }
-    }, 30);
+    scrollChatToBottom();
   }
 
   function renderMessage(message) {
@@ -2605,14 +2703,15 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
 
   window.sendMsg =
     async () => {
+      if (sendingMessage) {
+        return;
+      }
+
       const el =
         document.getElementById(
           "msg"
         );
 
-      /*
-        Always capture the newest value.
-      */
       const rawText =
         el?.value ?? messageDraft;
 
@@ -2628,16 +2727,9 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
         return;
       }
 
-      /*
-        Keep the draft until Supabase confirms
-        the message was successfully inserted.
-      */
       messageDraft = text;
+      sendingMessage = true;
 
-      /*
-        Prevent duplicate sends while the request
-        is in progress.
-      */
       const sendButton =
         document.querySelector(
           ".send"
@@ -2647,20 +2739,49 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
         sendButton.disabled = true;
       }
 
-      const { error } =
-        await db
-          .from("messages")
-          .insert({
-            sender_id:
-              state.user.id,
-            receiver_id:
-              state.chat.id,
-            message: text
-          });
+      try {
+        const { error } =
+          await db
+            .from("messages")
+            .insert({
+              sender_id:
+                state.user.id,
+              receiver_id:
+                state.chat.id,
+              message: text
+            });
 
-      if (error) {
+        if (error) {
+          throw error;
+        }
+
         /*
-          Restore the text after a failed send.
+          Only clear the composer AFTER
+          successful database insertion.
+        */
+        messageDraft = "";
+
+        const currentInput =
+          document.getElementById(
+            "msg"
+          );
+
+        if (currentInput) {
+          currentInput.value = "";
+        }
+
+        /*
+          Refresh messages only.
+          DO NOT renderChat().
+        */
+        await getMessages();
+        await updateChatMessages();
+        await updatePresenceActivity();
+
+      } catch (error) {
+        /*
+          Failed send:
+          restore text and focus.
         */
         messageDraft = text;
 
@@ -2672,6 +2793,7 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
         if (currentInput) {
           currentInput.value =
             text;
+
           currentInput.focus();
 
           try {
@@ -2682,33 +2804,26 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
           } catch {}
         }
 
-        if (sendButton) {
-          sendButton.disabled = false;
+        toast(
+          error?.message ||
+            "Message could not be sent."
+        );
+
+      } finally {
+        sendingMessage = false;
+
+        const currentSendButton =
+          document.querySelector(
+            ".send"
+          );
+
+        if (
+          currentSendButton
+        ) {
+          currentSendButton.disabled =
+            false;
         }
-
-        return toast(
-          error.message
-        );
       }
-
-      /*
-        Successful send:
-        now clear the draft.
-      */
-      messageDraft = "";
-
-      const currentInput =
-        document.getElementById(
-          "msg"
-        );
-
-      if (currentInput) {
-        currentInput.value = "";
-      }
-
-      await getMessages();
-      await renderChat();
-      await updatePresenceActivity();
     };
 
   /* =========================================================
@@ -2728,15 +2843,10 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
         );
 
       /*
-        Capture message text before doing
-        anything asynchronous.
+        Save whatever the user has typed.
       */
       captureMessageDraft();
 
-      /*
-        Clear file input only after capturing
-        the selected File objects.
-      */
       if (input) {
         input.value = "";
       }
@@ -2759,9 +2869,27 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
       }
 
       /*
-        Restore typed message after uploads.
+        Composer was never destroyed,
+        but this makes absolutely sure
+        the text remains.
       */
       restoreMessageDraft();
+
+      const msg =
+        document.getElementById(
+          "msg"
+        );
+
+      if (msg) {
+        msg.focus();
+
+        try {
+          msg.setSelectionRange(
+            msg.value.length,
+            msg.value.length
+          );
+        } catch {}
+      }
     };
 
   /* =========================================================
@@ -2784,6 +2912,7 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
   window.leaveChat =
     async () => {
       messageDraft = "";
+      chatRenderToken++;
 
       state.chat = null;
       state.messages = [];
@@ -3303,9 +3432,6 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
       return;
     }
 
-    /*
-      Profile setup has absolute priority.
-    */
     if (!state.profile) {
       state.screen = "setup";
       renderSetup();
@@ -3409,10 +3535,6 @@ alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
             return;
           }
 
-          /*
-            Do not rebuild an active profile setup form
-            for a duplicate auth event.
-          */
           if (
             sameUser &&
             profileFormActive &&
