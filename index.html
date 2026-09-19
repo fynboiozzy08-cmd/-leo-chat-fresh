@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
 
@@ -9,7 +8,10 @@
     content="width=device-width, initial-scale=1, viewport-fit=cover"
   >
 
-  <meta name="theme-color" content="#050505">
+  <meta
+    name="theme-color"
+    content="#050505"
+  >
 
   <meta
     name="apple-mobile-web-app-capable"
@@ -26,154 +28,60 @@
     content="Leo Chat"
   >
 
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="apple-touch-icon" href="./logo.svg">
-  <link rel="icon" href="./logo.svg">
+  <title>Leo Chat</title>
+
+  <link
+    rel="manifest"
+    href="./manifest.webmanifest?v=20260919"
+  >
+
+  <link
+    rel="apple-touch-icon"
+    href="./logo.svg?v=20260919"
+  >
+
+  <link
+    rel="icon"
+    type="image/svg+xml"
+    href="./logo.svg?v=20260919"
+  >
 
   <link
     rel="stylesheet"
-    href="./styles.css?v=9"
+    href="./styles.css?v=20260919"
   >
-
-  <title>Leo Chat</title>
 </head>
 
 <body>
 
   <div id="app">
+    <div
+      style="
+        min-height:100vh;
+        background:#050505;
+        color:#D4AF37;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        flex-direction:column;
+        font-family:Arial,sans-serif;
+        text-align:center;
+        padding:25px;
+      "
+    >
+      <div style="font-size:60px;">
+        🦁
+      </div>
 
-    <main class="screen center">
+      <h2>
+        Leo Chat
+      </h2>
 
-      <div class="brand">🦁</div>
-
-      <h1>Leo Chat</h1>
-
-      <p class="tagline">
-        Chat. Connect. Roar.
-      </p>
-
-      <p id="status" class="muted">
+      <p style="color:#777;">
         Starting Leo Chat...
       </p>
-
-    </main>
-
+    </div>
   </div>
-
-  <script>
-
-    /*
-     * Catch JavaScript errors BEFORE app.js loads.
-     */
-
-    window.addEventListener("error", function(event) {
-
-      var app =
-        document.getElementById("app");
-
-      if (!app) return;
-
-      var message =
-        event.message ||
-        "Unknown JavaScript error.";
-
-      app.innerHTML = `
-
-        <main class="screen center">
-
-          <div class="brand">
-            🦁
-          </div>
-
-          <h1>
-            Leo Chat
-          </h1>
-
-          <p class="tagline">
-            Chat. Connect. Roar.
-          </p>
-
-          <div class="card error-card">
-
-            <h2>
-              JavaScript Error
-            </h2>
-
-            <p>
-              ${message}
-            </p>
-
-            <p>
-              Line:
-              ${event.lineno || "unknown"}
-            </p>
-
-            <p>
-              File:
-              ${event.filename || "unknown"}
-            </p>
-
-          </div>
-
-        </main>
-
-      `;
-
-    });
-
-    window.addEventListener(
-      "unhandledrejection",
-      function(event) {
-
-        var app =
-          document.getElementById("app");
-
-        if (!app) return;
-
-        var reason =
-          event.reason?.message ||
-          String(
-            event.reason ||
-            "Unknown promise error."
-          );
-
-        app.innerHTML = `
-
-          <main class="screen center">
-
-            <div class="brand">
-              🦁
-            </div>
-
-            <h1>
-              Leo Chat
-            </h1>
-
-            <p class="tagline">
-              Chat. Connect. Roar.
-            </p>
-
-            <div class="card error-card">
-
-              <h2>
-                Startup Error
-              </h2>
-
-              <p>
-                ${reason}
-              </p>
-
-            </div>
-
-          </main>
-
-        `;
-
-      }
-    );
-
-  </script>
-
 
   <!-- =====================================================
        SUPABASE
@@ -181,91 +89,46 @@
 
   <script
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
-    crossorigin="anonymous"
   ></script>
 
-
   <!-- =====================================================
-       CONFIG
+       LEO CONFIG
        ===================================================== -->
 
-  <script
-    src="./config.js?v=9"
-  ></script>
-
+  <script src="./config.js?v=20260919"></script>
 
   <!-- =====================================================
-       LEO CHAT
+       LEO CHAT APP
+       
+       IMPORTANT:
+       The version number forces Safari/GitHub Pages
+       to load the newest app.js instead of an old cache.
        ===================================================== -->
 
-  <script
-    src="./app.js?v=9"
-  ></script>
-
+  <script src="./app.js?v=20260919"></script>
 
   <!-- =====================================================
-       LOADER STATUS
+       SERVICE WORKER
        ===================================================== -->
 
   <script>
-
-    setTimeout(function() {
-
-      var app =
-        document.getElementById("app");
-
-      /*
-       * If boot() never replaced the loader,
-       * show a useful diagnostic.
-       */
-
-      if (
-        app &&
-        app.innerText.includes(
-          "Starting Leo Chat"
-        )
-      ) {
-
-        app.innerHTML = `
-
-          <main class="screen center">
-
-            <div class="brand">
-              🦁
-            </div>
-
-            <h1>
-              Leo Chat
-            </h1>
-
-            <p class="tagline">
-              Chat. Connect. Roar.
-            </p>
-
-            <div class="card error-card">
-
-              <h2>
-                Leo Chat stopped starting
-              </h2>
-
-              <p>
-                The app.js file loaded, but Leo Chat did not start.
-              </p>
-
-              <p>
-                This usually means an error occurred while executing app.js.
-              </p>
-
-            </div>
-
-          </main>
-
-        `;
-
-      }
-
-    }, 5000);
-
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("./sw.js?v=20260919")
+          .then(() => {
+            console.log(
+              "Leo Chat service worker registered."
+            );
+          })
+          .catch((error) => {
+            console.log(
+              "Service worker registration failed:",
+              error
+            );
+          });
+      });
+    }
   </script>
 
 </body>
