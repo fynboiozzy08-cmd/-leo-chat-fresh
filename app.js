@@ -1,11 +1,17 @@
-alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
+alert("LEO NEW APP.JS 20260919 — CHAT INPUT FIXED");
 
 (() => {
   /* =========================================================
      LEO CHAT — WEB APP
-     Original Leo Chat design
-     Fixed profile form re-render
-     Real Supabase attachments + presence
+     Cleaned + corrected version
+
+     IMPORTANT FIXES:
+     - Message typing is preserved during renders
+     - Polling does not constantly rebuild the chat
+     - Realtime updates preserve typed drafts
+     - Failed sends restore the message
+     - Attachment uploads preserve typed drafts
+     - Profile setup remains protected from background events
      ========================================================= */
 
   const cfg = window.LEO_CONFIG || {};
@@ -88,6 +94,14 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
     )
   };
 
+  /*
+    Stores the message currently being typed.
+
+    This is the main protection against losing text when
+    renderChat() has to rebuild the chat UI.
+  */
+  let messageDraft = "";
+
   let poll = null;
   let presencePoll = null;
   let messageChannel = null;
@@ -95,17 +109,19 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
   let authSubscription = null;
 
   /*
-    IMPORTANT:
-    Once the profile form is on screen, background Supabase
-    events are NOT allowed to rebuild it.
+    Prevent profile setup from being rebuilt while
+    the user is typing into the setup form.
   */
   let profileFormActive = false;
 
   /*
-    Prevent duplicate initialization when Supabase sends
-    its initial SIGNED_IN event after boot.
+    Prevent duplicate initialization.
   */
   let appInitialized = false;
+
+  /* =========================================================
+     HELPERS
+     ========================================================= */
 
   const esc = (s) =>
     String(s ?? "").replace(
@@ -210,6 +226,41 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
     return String(name || "leo-file")
       .replace(/[^a-zA-Z0-9._-]/g, "_")
       .slice(0, 150);
+  }
+
+  /* =========================================================
+     MESSAGE DRAFT
+     ========================================================= */
+
+  /*
+    Keep the current text outside the DOM.
+
+    This is important because renderChat() replaces
+    app.innerHTML and therefore destroys the old input.
+  */
+
+  window.updateMessageDraft = (value) => {
+    messageDraft = String(value ?? "");
+  };
+
+  function captureMessageDraft() {
+    const input =
+      document.getElementById("msg");
+
+    if (input) {
+      messageDraft = input.value;
+    }
+
+    return messageDraft;
+  }
+
+  function restoreMessageDraft() {
+    const input =
+      document.getElementById("msg");
+
+    if (!input) return;
+
+    input.value = messageDraft;
   }
 
   /* =========================================================
@@ -396,7 +447,8 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
             });
 
             /*
-              Never rebuild the setup/profile form.
+              Do not rebuild the chat while typing.
+              Chat message updates have their own logic.
             */
             if (
               state.screen === "home" ||
@@ -497,6 +549,11 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
         await ensurePresence();
         await loadPresence();
 
+        /*
+          Home/search can safely rerender.
+          Chat does NOT rerender from presence polling.
+          This is another important typing protection.
+        */
         if (
           state.screen === "home" ||
           state.screen === "search"
@@ -700,6 +757,11 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
       toast("Open a chat first.");
       return;
     }
+
+    /*
+      Capture anything being typed before async upload.
+    */
+    captureMessageDraft();
 
     const {
       data: sessionData,
@@ -1155,29 +1217,91 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
 
     poll = setInterval(
       async () => {
+
         if (
-          state.screen ===
-          "chat"
+          state.screen === "chat"
         ) {
+          /*
+            IMPORTANT:
+            Capture what the user is typing before
+            doing any asynchronous work.
+          */
+          captureMessageDraft();
+
+          const oldMessages =
+            state.messages || [];
+
+          const oldMessageCount =
+            oldMessages.length;
+
+          const oldLastMessage =
+            oldMessageCount
+              ? oldMessages[
+                  oldMessageCount - 1
+                ]
+              : null;
+
+          const oldLastMessageId =
+            oldLastMessage?.id || null;
+
+          const oldLastMessageTime =
+            oldLastMessage?.created_at ||
+            null;
+
           await getMessages();
+
+          /*
+            Only redraw the chat when something actually
+            changed in the message list.
+          */
+          const newMessages =
+            state.messages || [];
+
+          const newMessageCount =
+            newMessages.length;
+
+          const newLastMessage =
+            newMessageCount
+              ? newMessages[
+                  newMessageCount - 1
+                ]
+              : null;
+
+          const newLastMessageId =
+            newLastMessage?.id || null;
+
+          const newLastMessageTime =
+            newLastMessage?.created_at ||
+            null;
+
+          const messagesChanged =
+            oldMessageCount !==
+              newMessageCount ||
+            oldLastMessageId !==
+              newLastMessageId ||
+            oldLastMessageTime !==
+              newLastMessageTime;
+
+          if (messagesChanged) {
+            await renderChat();
+          }
+
           await loadPresence();
-          await renderChat();
+
+          /*
+            Restore draft in case the DOM was changed
+            by another event during polling.
+          */
+          restoreMessageDraft();
         }
 
         if (
-          state.screen ===
-            "home" ||
-          state.screen ===
-            "search"
+          state.screen === "home" ||
+          state.screen === "search"
         ) {
           await loadPresence();
           render();
         }
-
-        /*
-          IMPORTANT:
-          No render() happens while profile setup is active.
-        */
       },
       5000
     );
@@ -1215,11 +1339,17 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
           },
           async () => {
             if (
-              state.screen ===
-              "chat"
+              state.screen === "chat"
             ) {
+              /*
+                Preserve text before realtime refresh.
+              */
+              captureMessageDraft();
+
               await getMessages();
               await renderChat();
+
+              restoreMessageDraft();
             } else {
               addNotification(
                 "New message",
@@ -1238,11 +1368,14 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
           },
           async () => {
             if (
-              state.screen ===
-              "chat"
+              state.screen === "chat"
             ) {
+              captureMessageDraft();
+
               await getMessages();
               await renderChat();
+
+              restoreMessageDraft();
             }
           }
         )
@@ -1307,11 +1440,11 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
     `;
   }
 
+  /* =========================================================
+     NAVIGATION
+     ========================================================= */
+
   window.go = async (screen) => {
-    /*
-      Never navigate away from an unfinished profile
-      because of a background event.
-    */
     if (
       profileFormActive &&
       state.screen === "setup" &&
@@ -1321,6 +1454,13 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
     }
 
     state.screen = screen;
+
+    /*
+      Leaving a chat clears its draft.
+    */
+    if (screen !== "chat") {
+      messageDraft = "";
+    }
 
     await updatePresenceActivity();
 
@@ -1364,6 +1504,11 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
     async (
       person
     ) => {
+      /*
+        Start a fresh draft for the selected chat.
+      */
+      messageDraft = "";
+
       state.chat = person;
       state.screen = "chat";
       state.messages = [];
@@ -1377,10 +1522,8 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
 
   window.logout =
     async () => {
-      /*
-        Allow logout to happen normally.
-      */
       profileFormActive = false;
+      messageDraft = "";
 
       try {
         await markOffline();
@@ -1578,18 +1721,6 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
   function renderSetup() {
     state.screen = "setup";
 
-    /*
-      THIS IS THE IMPORTANT FIX.
-
-      If the inputs already exist, do absolutely nothing.
-
-      This means:
-      - Supabase auth events cannot erase typing
-      - presence events cannot erase typing
-      - background polling cannot erase typing
-      - realtime events cannot erase typing
-    */
-
     const existingUsername =
       document.getElementById("uname");
 
@@ -1664,7 +1795,6 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
 
   window.saveProfile =
     async () => {
-
       if (!state.user) {
         return toast(
           "Please log in again."
@@ -1713,13 +1843,9 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
           "Saving...";
       }
 
-      /*
-        Keep the form active while the request is running.
-      */
       profileFormActive = true;
 
       try {
-
         const {
           data,
           error
@@ -1753,10 +1879,6 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
 
         state.profile = data;
 
-        /*
-          Profile is now safely saved.
-          Only now is it okay to leave setup.
-        */
         profileFormActive = false;
 
         await ensurePresence();
@@ -1767,7 +1889,6 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
         render();
 
       } catch (error) {
-
         console.error(
           "PROFILE SAVE EXCEPTION:",
           error
@@ -2137,7 +2258,39 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
       return renderHome();
     }
 
+    /*
+      Capture whatever is currently typed BEFORE
+      doing any asynchronous work.
+    */
+    captureMessageDraft();
+
+    /*
+      Keep focus state and cursor position.
+    */
+    const oldInput =
+      document.getElementById("msg");
+
+    const wasFocused =
+      oldInput &&
+      document.activeElement === oldInput;
+
+    const oldCursor =
+      oldInput &&
+      typeof oldInput.selectionStart === "number"
+        ? oldInput.selectionStart
+        : messageDraft.length;
+
+    /*
+      This operation can take time because signed URLs
+      may need to be generated.
+    */
     await prepareAttachmentUrls();
+
+    /*
+      Something may have happened while the async
+      operation was running, so capture the input again.
+    */
+    captureMessageDraft();
 
     const msgs = state.messages;
 
@@ -2288,6 +2441,12 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
                 class="input"
                 placeholder="Message..."
                 autocomplete="off"
+                value="${esc(
+                  messageDraft
+                )}"
+                oninput="
+                  updateMessageDraft(this.value)
+                "
                 onkeydown="
                   if(
                     event.key === 'Enter' &&
@@ -2315,6 +2474,50 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
         false
       );
 
+    /*
+      Restore the exact message draft.
+    */
+    const newInput =
+      document.getElementById("msg");
+
+    if (newInput) {
+      newInput.value =
+        messageDraft;
+
+      /*
+        Restore focus if the user was actively
+        typing before the render.
+      */
+      if (wasFocused) {
+        setTimeout(() => {
+          const current =
+            document.getElementById(
+              "msg"
+            );
+
+          if (!current) return;
+
+          current.focus();
+
+          try {
+            const position =
+              Math.min(
+                oldCursor,
+                current.value.length
+              );
+
+            current.setSelectionRange(
+              position,
+              position
+            );
+          } catch {}
+        }, 0);
+      }
+    }
+
+    /*
+      Keep the messages scrolled to the bottom.
+    */
     setTimeout(() => {
       const m =
         document.getElementById(
@@ -2396,6 +2599,10 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
     `;
   }
 
+  /* =========================================================
+     SEND MESSAGE
+     ========================================================= */
+
   window.sendMsg =
     async () => {
       const el =
@@ -2403,8 +2610,14 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
           "msg"
         );
 
+      /*
+        Always capture the newest value.
+      */
+      const rawText =
+        el?.value ?? messageDraft;
+
       const text =
-        el?.value.trim();
+        rawText.trim();
 
       if (!text) return;
 
@@ -2415,7 +2628,24 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
         return;
       }
 
-      el.value = "";
+      /*
+        Keep the draft until Supabase confirms
+        the message was successfully inserted.
+      */
+      messageDraft = text;
+
+      /*
+        Prevent duplicate sends while the request
+        is in progress.
+      */
+      const sendButton =
+        document.querySelector(
+          ".send"
+        );
+
+      if (sendButton) {
+        sendButton.disabled = true;
+      }
 
       const { error } =
         await db
@@ -2429,11 +2659,51 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
           });
 
       if (error) {
-        el.value = text;
+        /*
+          Restore the text after a failed send.
+        */
+        messageDraft = text;
+
+        const currentInput =
+          document.getElementById(
+            "msg"
+          );
+
+        if (currentInput) {
+          currentInput.value =
+            text;
+          currentInput.focus();
+
+          try {
+            currentInput.setSelectionRange(
+              text.length,
+              text.length
+            );
+          } catch {}
+        }
+
+        if (sendButton) {
+          sendButton.disabled = false;
+        }
 
         return toast(
           error.message
         );
+      }
+
+      /*
+        Successful send:
+        now clear the draft.
+      */
+      messageDraft = "";
+
+      const currentInput =
+        document.getElementById(
+          "msg"
+        );
+
+      if (currentInput) {
+        currentInput.value = "";
       }
 
       await getMessages();
@@ -2449,7 +2719,6 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
     async (
       event
     ) => {
-
       const input =
         event?.target;
 
@@ -2459,8 +2728,14 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
         );
 
       /*
-        Clear the input only AFTER we have captured
-        the File objects.
+        Capture message text before doing
+        anything asynchronous.
+      */
+      captureMessageDraft();
+
+      /*
+        Clear file input only after capturing
+        the selected File objects.
       */
       if (input) {
         input.value = "";
@@ -2482,6 +2757,11 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
           file
         );
       }
+
+      /*
+        Restore typed message after uploads.
+      */
+      restoreMessageDraft();
     };
 
   /* =========================================================
@@ -2503,6 +2783,8 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
 
   window.leaveChat =
     async () => {
+      messageDraft = "";
+
       state.chat = null;
       state.messages = [];
       state.attachments = {};
@@ -2928,6 +3210,8 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
       state.screen =
         "notifications";
 
+      messageDraft = "";
+
       render();
     };
 
@@ -3021,8 +3305,6 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
 
     /*
       Profile setup has absolute priority.
-      Never allow another screen to replace it until
-      the profile actually exists.
     */
     if (!state.profile) {
       state.screen = "setup";
@@ -3030,9 +3312,6 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
       return;
     }
 
-    /*
-      Once a real profile exists, the setup form is finished.
-    */
     profileFormActive = false;
 
     if (
@@ -3102,13 +3381,6 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
             session?.user ||
             null;
 
-          /*
-            If the exact same user is already initialized,
-            do not restart everything.
-
-            This is what prevents Supabase's initial
-            SIGNED_IN event from rebuilding the profile form.
-          */
           const sameUser =
             Boolean(
               state.user &&
@@ -3123,6 +3395,7 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
           if (!state.user) {
 
             profileFormActive = false;
+            messageDraft = "";
 
             state.profile = null;
 
@@ -3137,9 +3410,8 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
           }
 
           /*
-            If the profile form is currently visible and the
-            auth event is only a duplicate SIGNED_IN event,
-            DO NOT touch the form.
+            Do not rebuild an active profile setup form
+            for a duplicate auth event.
           */
           if (
             sameUser &&
@@ -3160,10 +3432,6 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
             profileFormActive =
               true;
 
-            /*
-              Only create the setup form if it does not
-              already exist.
-            */
             if (
               !document.getElementById(
                 "uname"
@@ -3178,10 +3446,6 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
           profileFormActive =
             false;
 
-          /*
-            Avoid duplicate channels/pollers when the
-            initial auth event fires after boot.
-          */
           if (
             !sameUser ||
             !appInitialized
@@ -3193,9 +3457,6 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
             appInitialized = true;
           }
 
-          /*
-            If the profile now exists, home is safe.
-          */
           if (
             state.screen ===
             "setup"
@@ -3288,9 +3549,6 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
         }
       }
 
-      /*
-        Start listener AFTER the initial session is known.
-      */
       startAuthListener();
 
       await render();
