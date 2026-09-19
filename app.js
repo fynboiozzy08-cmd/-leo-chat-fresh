@@ -1,23 +1,30 @@
 (() => {
   /* =========================================================
      LEO CHAT — WEB APP
-     Stable version
+     Stable version + CONTACTS
 
-     UPDATED AFTER NEW MOBILE CSS
+     EXISTING FEATURES PRESERVED:
+     - Login / signup
+     - Profile setup
+     - 1-to-1 messaging
+     - Persistent chat
+     - Search
+     - Attachments
+     - Presence / online / last seen
+     - Notifications
+     - Read receipts display
+     - Black / gold design
+     - Protected typing inputs
 
-     FIXES:
-     - Startup alert removed
-     - Profile username does not clear while typing
-     - Search input does not clear while typing
-     - Chat composer does not rebuild while typing
-     - Realtime messages update messages only
-     - Polling does not destroy active inputs
-     - Attachments do not destroy typed messages
-     - Failed sends restore typed message
-     - Real Supabase attachments remain enabled
-     - Presence remains enabled
-     - Notifications remain enabled
-     - Compatible with the new mobile styles.css
+     NEW:
+     - Contacts
+     - Contact search
+     - Contact requests
+     - Accept / reject requests
+     - Contact profiles
+     - Remove contacts
+     - Block contacts
+     - Realtime contact updates
      ========================================================= */
 
   const cfg = window.LEO_CONFIG || {};
@@ -80,11 +87,19 @@
     profile: null,
     screen: "home",
     chat: null,
+
     profiles: [],
     messages: [],
+
     attachments: {},
     attachmentUrls: {},
+
     presence: {},
+
+    /* CONTACTS */
+    contacts: [],
+    contactRequests: [],
+    contactProfile: null,
 
     moments: JSON.parse(
       localStorage.getItem("leo_moments") || "[]"
@@ -108,8 +123,11 @@
 
   let poll = null;
   let presencePoll = null;
+
   let messageChannel = null;
   let presenceChannel = null;
+  let contactChannel = null;
+
   let authSubscription = null;
 
   let profileFormActive = false;
@@ -449,13 +467,6 @@
               };
             });
 
-            /*
-              IMPORTANT:
-              Never render setup/chat/search here.
-              Background presence updates must not
-              destroy active inputs.
-            */
-
             if (
               state.screen === "home" ||
               state.screen === "search"
@@ -571,10 +582,6 @@
         await ensurePresence();
         await loadPresence();
 
-        /*
-          NEVER rebuild active input screens.
-        */
-
         if (
           state.screen === "home"
         ) {
@@ -656,6 +663,597 @@
     }
 
     state.profiles = data || [];
+  }
+
+  /* =========================================================
+     CONTACTS
+     ========================================================= */
+
+  async function loadContacts() {
+    if (!state.user) return;
+
+    const { data, error } = await db
+      .from("contacts")
+      .select(
+        "id,user_id,contact_id,status,created_at"
+      )
+      .or(
+        `user_id.eq.${state.user.id},contact_id.eq.${state.user.id}`
+      )
+      .order("created_at", {
+        ascending: false
+      });
+
+    if (error) {
+      console.log(
+        "Contacts:",
+        error.message
+      );
+      return;
+    }
+
+    state.contacts = data || [];
+
+    const requests = [];
+
+    (data || []).forEach((item) => {
+      /*
+        Incoming request:
+        someone else sent the request to me.
+      */
+
+      if (
+        item.contact_id ===
+          state.user.id &&
+        item.user_id !==
+          state.user.id &&
+        item.status === "pending"
+      ) {
+        requests.push(item);
+      }
+    });
+
+    state.contactRequests =
+      requests;
+  }
+
+  function getContactRelationship(
+    otherId
+  ) {
+    if (!state.user || !otherId) {
+      return null;
+    }
+
+    return (
+      state.contacts.find(
+        (item) =>
+          (
+            item.user_id ===
+              state.user.id &&
+            item.contact_id ===
+              otherId
+          ) ||
+          (
+            item.contact_id ===
+              state.user.id &&
+            item.user_id ===
+              otherId
+          )
+      ) || null
+    );
+  }
+
+  function isContact(otherId) {
+    const relationship =
+      getContactRelationship(
+        otherId
+      );
+
+    return Boolean(
+      relationship &&
+      relationship.status ===
+        "accepted"
+    );
+  }
+
+  function isIncomingRequest(
+    otherId
+  ) {
+    const relationship =
+      getContactRelationship(
+        otherId
+      );
+
+    return Boolean(
+      relationship &&
+      relationship.user_id !==
+        state.user.id &&
+      relationship.contact_id ===
+        state.user.id &&
+      relationship.status ===
+        "pending"
+    );
+  }
+
+  function isOutgoingRequest(
+    otherId
+  ) {
+    const relationship =
+      getContactRelationship(
+        otherId
+      );
+
+    return Boolean(
+      relationship &&
+      relationship.user_id ===
+        state.user.id &&
+      relationship.contact_id ===
+        otherId &&
+      relationship.status ===
+        "pending"
+    );
+  }
+
+  function getProfileById(
+    id
+  ) {
+    return (
+      state.profiles.find(
+        (profile) =>
+          profile.id === id
+      ) || null
+    );
+  }
+
+  async function sendContactRequest(
+    otherId
+  ) {
+    if (!state.user) {
+      toast(
+        "Please log in first."
+      );
+      return;
+    }
+
+    if (
+      !otherId ||
+      otherId === state.user.id
+    ) {
+      toast(
+        "You cannot add yourself."
+      );
+      return;
+    }
+
+    await loadContacts();
+
+    const existing =
+      getContactRelationship(
+        otherId
+      );
+
+    if (existing) {
+      if (
+        existing.status ===
+        "accepted"
+      ) {
+        toast(
+          "This user is already in your contacts."
+        );
+        return;
+      }
+
+      if (
+        existing.status ===
+        "pending"
+      ) {
+        toast(
+          existing.user_id ===
+            state.user.id
+            ? "Contact request already sent."
+            : "This person already sent you a request."
+        );
+        return;
+      }
+
+      if (
+        existing.status ===
+        "blocked"
+      ) {
+        toast(
+          "This contact is blocked."
+        );
+        return;
+      }
+    }
+
+    const { error } =
+      await db
+        .from("contacts")
+        .insert({
+          user_id:
+            state.user.id,
+          contact_id:
+            otherId,
+          status: "pending"
+        });
+
+    if (error) {
+      toast(
+        error.message ||
+          "Could not send contact request."
+      );
+      return;
+    }
+
+    await loadContacts();
+
+    toast(
+      "Contact request sent."
+    );
+
+    if (
+      state.screen ===
+      "contactProfile"
+    ) {
+      renderContactProfile();
+    } else if (
+      state.screen ===
+      "contacts"
+    ) {
+      renderContacts();
+    }
+  }
+
+  async function acceptContactRequest(
+    requestId
+  ) {
+    if (!state.user) return;
+
+    const request =
+      state.contactRequests.find(
+        (item) =>
+          String(item.id) ===
+          String(requestId)
+      );
+
+    if (!request) {
+      toast(
+        "Contact request no longer exists."
+      );
+      return;
+    }
+
+    const { error } =
+      await db
+        .from("contacts")
+        .update({
+          status: "accepted"
+        })
+        .eq(
+          "id",
+          request.id
+        );
+
+    if (error) {
+      toast(
+        error.message ||
+          "Could not accept request."
+      );
+      return;
+    }
+
+    await loadContacts();
+    await getProfiles();
+
+    addNotification(
+      "Contact added",
+      "You are now connected on Leo Chat."
+    );
+
+    renderContacts();
+  }
+
+  async function rejectContactRequest(
+    requestId
+  ) {
+    if (!state.user) return;
+
+    const request =
+      state.contactRequests.find(
+        (item) =>
+          String(item.id) ===
+          String(requestId)
+      );
+
+    if (!request) {
+      toast(
+        "Contact request no longer exists."
+      );
+      return;
+    }
+
+    const { error } =
+      await db
+        .from("contacts")
+        .delete()
+        .eq(
+          "id",
+          request.id
+        );
+
+    if (error) {
+      toast(
+        error.message ||
+          "Could not reject request."
+      );
+      return;
+    }
+
+    await loadContacts();
+
+    toast(
+      "Contact request rejected."
+    );
+
+    renderContacts();
+  }
+
+  async function removeContact(
+    otherId
+  ) {
+    if (!state.user) return;
+
+    const relationship =
+      getContactRelationship(
+        otherId
+      );
+
+    if (!relationship) {
+      toast(
+        "Contact relationship not found."
+      );
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        "Remove this contact from Leo Chat?"
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const { error } =
+      await db
+        .from("contacts")
+        .delete()
+        .eq(
+          "id",
+          relationship.id
+        );
+
+    if (error) {
+      toast(
+        error.message ||
+          "Could not remove contact."
+      );
+      return;
+    }
+
+    await loadContacts();
+
+    toast(
+      "Contact removed."
+    );
+
+    if (
+      state.screen ===
+      "contactProfile"
+    ) {
+      renderContactProfile();
+    } else {
+      renderContacts();
+    }
+  }
+
+  async function blockContact(
+    otherId
+  ) {
+    if (!state.user) return;
+
+    const relationship =
+      getContactRelationship(
+        otherId
+      );
+
+    if (!relationship) {
+      toast(
+        "Contact relationship not found."
+      );
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        "Block this contact?"
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const { error } =
+      await db
+        .from("contacts")
+        .update({
+          status: "blocked"
+        })
+        .eq(
+          "id",
+          relationship.id
+        );
+
+    if (error) {
+      toast(
+        error.message ||
+          "Could not block contact."
+      );
+      return;
+    }
+
+    await loadContacts();
+
+    toast(
+      "Contact blocked."
+    );
+
+    renderContacts();
+  }
+
+  window.sendContactRequest =
+    sendContactRequest;
+
+  window.acceptContactRequest =
+    acceptContactRequest;
+
+  window.rejectContactRequest =
+    rejectContactRequest;
+
+  window.removeContact =
+    removeContact;
+
+  window.blockContact =
+    blockContact;
+
+  window.openContactProfile =
+    async (
+      id
+    ) => {
+      if (!id) return;
+
+      await getProfiles();
+
+      const person =
+        getProfileById(id);
+
+      if (!person) {
+        toast(
+          "User could not be found."
+        );
+        return;
+      }
+
+      state.contactProfile =
+        person;
+
+      state.screen =
+        "contactProfile";
+
+      await loadPresence();
+
+      renderContactProfile();
+    };
+
+  async function startContactRealtime() {
+    if (!state.user) return;
+
+    if (contactChannel) {
+      try {
+        await db.removeChannel(
+          contactChannel
+        );
+      } catch {}
+    }
+
+    contactChannel =
+      db
+        .channel(
+          "leo-contacts-" +
+            state.user.id
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "contacts",
+            filter:
+              `contact_id=eq.${state.user.id}`
+          },
+          async () => {
+            await loadContacts();
+            await getProfiles();
+
+            addNotification(
+              "New contact request",
+              "Someone wants to connect with you on Leo Chat."
+            );
+
+            if (
+              state.screen ===
+              "contacts"
+            ) {
+              renderContacts();
+            }
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "contacts",
+            filter:
+              `contact_id=eq.${state.user.id}`
+          },
+          async () => {
+            await loadContacts();
+
+            if (
+              state.screen ===
+              "contacts"
+            ) {
+              renderContacts();
+            }
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "DELETE",
+            schema: "public",
+            table: "contacts",
+            filter:
+              `contact_id=eq.${state.user.id}`
+          },
+          async () => {
+            await loadContacts();
+
+            if (
+              state.screen ===
+              "contacts"
+            ) {
+              renderContacts();
+            }
+          }
+        )
+        .subscribe();
+  }
+
+  async function stopContactRealtime() {
+    if (!contactChannel) {
+      return;
+    }
+
+    try {
+      await db.removeChannel(
+        contactChannel
+      );
+    } catch {}
+
+    contactChannel = null;
   }
 
   /* =========================================================
@@ -843,7 +1441,6 @@
 
     try {
       const {
-        data: uploadData,
         error: uploadError
       } = await db.storage
         .from(MEDIA_BUCKET)
@@ -913,7 +1510,6 @@
       }
 
       const {
-        data: attachment,
         error: attachmentError
       } = await db
         .from("message_attachments")
@@ -1355,11 +1951,6 @@
           return;
         }
 
-        /*
-          Never render setup here.
-          Never render chat here.
-        */
-
         if (
           state.screen === "home"
         ) {
@@ -1374,13 +1965,21 @@
           filterPeople();
         }
 
+        if (
+          state.screen === "contacts"
+        ) {
+          await loadPresence();
+          await loadContacts();
+          renderContacts();
+        }
+
       },
       5000
     );
   }
 
   /* =========================================================
-     REALTIME
+     REALTIME MESSAGES
      ========================================================= */
 
   async function startMessageRealtime() {
@@ -1471,6 +2070,7 @@
     const n = [
       ["home", "💬", "Chats"],
       ["search", "⌕", "Search"],
+      ["contacts", "👥", "Contacts"],
       ["moments", "✦", "Moments"],
       ["calls", "☎", "Calls"],
       ["settings", "⚙", "Settings"]
@@ -1510,11 +2110,6 @@
   window.go = async (
     screen
   ) => {
-    /*
-      Do not navigate away from profile setup
-      while the user is typing.
-    */
-
     if (
       profileFormActive &&
       state.screen === "setup" &&
@@ -1542,6 +2137,13 @@
       screen !== "search"
     ) {
       searchDraft = "";
+    }
+
+    if (
+      screen === "contacts"
+    ) {
+      await loadContacts();
+      await getProfiles();
     }
 
     await updatePresenceActivity();
@@ -1618,6 +2220,7 @@
       } catch {}
 
       await stopPresence();
+      await stopContactRealtime();
 
       if (messageChannel) {
         try {
@@ -1643,6 +2246,9 @@
       state.attachments = {};
       state.attachmentUrls = {};
       state.presence = {};
+      state.contacts = [];
+      state.contactRequests = [];
+      state.contactProfile = null;
       state.screen = "home";
 
       appInitialized = false;
@@ -1782,6 +2388,8 @@
         if (state.profile) {
           await startPresence();
           await startMessageRealtime();
+          await startContactRealtime();
+          await loadContacts();
           startPolling();
 
           state.screen = "home";
@@ -1808,12 +2416,6 @@
 
   function renderSetup() {
     state.screen = "setup";
-
-    /*
-      CRITICAL:
-      If the profile inputs already exist,
-      NEVER rebuild the screen.
-    */
 
     const usernameInput =
       document.getElementById(
@@ -1983,6 +2585,8 @@
 
         await ensurePresence();
         await getProfiles();
+        await startContactRealtime();
+        await loadContacts();
 
         state.screen = "home";
 
@@ -2009,7 +2613,8 @@
   async function renderHome() {
     await Promise.all([
       getProfiles(),
-      loadPresence()
+      loadPresence(),
+      loadContacts()
     ]);
 
     if (
@@ -2023,6 +2628,9 @@
         (p) =>
           p.id !== state.user.id
       );
+
+    const unreadRequests =
+      state.contactRequests.length;
 
     app.innerHTML =
       layout(
@@ -2041,14 +2649,35 @@
 
               </div>
 
-              <button
-                class="iconbtn"
-                onclick="
-                  openNotifications()
+              <div
+                style="
+                  display:flex;
+                  gap:8px;
+                  align-items:center
                 "
               >
-                🔔
-              </button>
+
+                <button
+                  class="iconbtn"
+                  onclick="
+                    go('contacts')
+                  "
+                  title="Contacts"
+                >
+                  👥
+                </button>
+
+                <button
+                  class="iconbtn"
+                  onclick="
+                    openNotifications()
+                  "
+                  title="Notifications"
+                >
+                  🔔
+                </button>
+
+              </div>
 
             </div>
 
@@ -2099,6 +2728,34 @@
                 </div>
 
               </div>
+
+              ${
+                unreadRequests
+                  ? `
+                    <button
+                      class="card"
+                      style="
+                        width:100%;
+                        border:1px solid #5c4a18;
+                        color:#d4af37;
+                        text-align:left;
+                        cursor:pointer
+                      "
+                      onclick="
+                        go('contacts')
+                      "
+                    >
+                      👥 You have
+                      ${unreadRequests}
+                      contact request${
+                        unreadRequests === 1
+                          ? ""
+                          : "s"
+                      }
+                    </button>
+                  `
+                  : ""
+              }
 
               <h3>
                 People
@@ -2208,12 +2865,6 @@
       document.getElementById(
         "results"
       );
-
-    /*
-      CRITICAL:
-      Never rebuild the search screen
-      while the user is typing.
-    */
 
     if (
       existingInput &&
@@ -2334,11 +2985,86 @@
                     p.id
                   );
 
+                const relationship =
+                  getContactRelationship(
+                    p.id
+                  );
+
+                let action =
+                  "";
+
+                if (
+                  relationship?.status ===
+                  "accepted"
+                ) {
+                  action = `
+                    <button
+                      class="iconbtn"
+                      onclick="
+                        event.stopPropagation();
+                        openContactProfile('${esc(
+                          p.id
+                        )}')
+                      "
+                      title="Contact"
+                    >
+                      👤
+                    </button>
+                  `;
+                } else if (
+                  isOutgoingRequest(
+                    p.id
+                  )
+                ) {
+                  action = `
+                    <span
+                      class="sub"
+                      style="
+                        white-space:nowrap
+                      "
+                    >
+                      Requested
+                    </span>
+                  `;
+                } else if (
+                  isIncomingRequest(
+                    p.id
+                  )
+                ) {
+                  action = `
+                    <button
+                      class="iconbtn"
+                      onclick="
+                        event.stopPropagation();
+                        go('contacts')
+                      "
+                      title="Contact request"
+                    >
+                      🔔
+                    </button>
+                  `;
+                } else {
+                  action = `
+                    <button
+                      class="iconbtn"
+                      onclick="
+                        event.stopPropagation();
+                        sendContactRequest('${esc(
+                          p.id
+                        )}')
+                      "
+                      title="Add contact"
+                    >
+                      ＋
+                    </button>
+                  `;
+                }
+
                 return `
                   <div
                     class="listitem"
                     onclick="
-                      openChatById('${esc(
+                      openContactProfile('${esc(
                         p.id
                       )}')
                     "
@@ -2391,6 +3117,8 @@
 
                     </div>
 
+                    ${action}
+
                   </div>
                 `;
               }
@@ -2401,11 +3129,6 @@
               No matches.
             </div>
           `;
-
-        /*
-          Restore the exact search text
-          after results update.
-        */
 
         if (
           input &&
@@ -2418,6 +3141,496 @@
       },
       150
     );
+  }
+
+  /* =========================================================
+     CONTACTS SCREEN
+     ========================================================= */
+
+  function renderContacts() {
+    state.screen = "contacts";
+
+    const acceptedContacts =
+      state.contacts.filter(
+        (item) =>
+          item.status ===
+          "accepted"
+      );
+
+    const contactProfiles =
+      acceptedContacts
+        .map((relationship) => {
+          const otherId =
+            relationship.user_id ===
+            state.user.id
+              ? relationship.contact_id
+              : relationship.user_id;
+
+          return getProfileById(
+            otherId
+          );
+        })
+        .filter(Boolean);
+
+    app.innerHTML =
+      layout(
+        `
+          <div class="screen">
+
+            <div class="top">
+
+              <button
+                class="back"
+                onclick="
+                  go('home')
+                "
+              >
+                ‹
+              </button>
+
+              <div class="brand">
+                👥 Contacts
+              </div>
+
+            </div>
+
+            <div class="content">
+
+              <button
+                class="btn"
+                onclick="
+                  go('search')
+                "
+              >
+                ＋ Add Contact
+              </button>
+
+              ${
+                state.contactRequests
+                  .length
+                  ? `
+                    <div class="card">
+
+                      <h3>
+                        Contact Requests
+                      </h3>
+
+                      ${state.contactRequests
+                        .map(
+                          (request) => {
+                            const person =
+                              getProfileById(
+                                request.user_id
+                              );
+
+                            if (!person) {
+                              return "";
+                            }
+
+                            return `
+                              <div
+                                class="listitem"
+                                style="
+                                  padding-left:0;
+                                  padding-right:0
+                                "
+                              >
+
+                                <div class="avatar">
+                                  ${esc(
+                                    person.avatar ||
+                                      "🦁"
+                                  )}
+                                </div>
+
+                                <div class="grow">
+
+                                  <div class="name">
+                                    ${esc(
+                                      person.display_name
+                                    )}
+                                  </div>
+
+                                  <div class="sub">
+                                    @${esc(
+                                      person.username
+                                    )}
+                                  </div>
+
+                                </div>
+
+                                <button
+                                  class="iconbtn"
+                                  onclick="
+                                    acceptContactRequest('${request.id}')
+                                  "
+                                  title="Accept"
+                                >
+                                  ✓
+                                </button>
+
+                                <button
+                                  class="iconbtn"
+                                  onclick="
+                                    rejectContactRequest('${request.id}')
+                                  "
+                                  title="Reject"
+                                >
+                                  ×
+                                </button>
+
+                              </div>
+                            `;
+                          }
+                        )
+                        .join("")}
+
+                    </div>
+                  `
+                  : ""
+              }
+
+              <h3>
+                My Contacts
+              </h3>
+
+              ${
+                contactProfiles.length
+                  ? contactProfiles
+                      .map(
+                        (person) => {
+                          const online =
+                            isOnline(
+                              person.id
+                            );
+
+                          return `
+                            <div
+                              class="listitem"
+                              onclick="
+                                openContactProfile('${esc(
+                                  person.id
+                                )}')
+                              "
+                            >
+
+                              <div class="avatar">
+                                ${esc(
+                                  person.avatar ||
+                                    "🦁"
+                                )}
+                              </div>
+
+                              <div class="grow">
+
+                                <div class="name">
+                                  ${esc(
+                                    person.display_name
+                                  )}
+                                </div>
+
+                                <div class="sub">
+                                  @${esc(
+                                    person.username
+                                  )}
+                                </div>
+
+                                <div class="online-status">
+
+                                  <span
+                                    class="status-dot ${
+                                      online
+                                        ? "online"
+                                        : "offline"
+                                    }"
+                                  ></span>
+
+                                  ${
+                                    online
+                                      ? "Online"
+                                      : formatLastSeen(
+                                          state
+                                            .presence[
+                                            person.id
+                                          ]
+                                            ?.last_seen_at
+                                        )
+                                  }
+
+                                </div>
+
+                              </div>
+
+                              <div class="gold">
+                                ›
+                              </div>
+
+                            </div>
+                          `;
+                        }
+                      )
+                      .join("")
+                  : `
+                      <div class="empty">
+
+                        <div class="empty-icon">
+                          👥
+                        </div>
+
+                        <div class="empty-title">
+                          No contacts yet
+                        </div>
+
+                        <div class="empty-text">
+                          Search for Leo users and add your first contact.
+                        </div>
+
+                      </div>
+                    `
+              }
+
+            </div>
+
+          </div>
+        `,
+        true
+      );
+  }
+
+  /* =========================================================
+     CONTACT PROFILE
+     ========================================================= */
+
+  function renderContactProfile() {
+    const person =
+      state.contactProfile;
+
+    if (!person) {
+      state.screen =
+        "contacts";
+
+      renderContacts();
+      return;
+    }
+
+    const relationship =
+      getContactRelationship(
+        person.id
+      );
+
+    const accepted =
+      relationship?.status ===
+      "accepted";
+
+    const incoming =
+      isIncomingRequest(
+        person.id
+      );
+
+    const outgoing =
+      isOutgoingRequest(
+        person.id
+      );
+
+    const online =
+      isOnline(
+        person.id
+      );
+
+    let actionArea = "";
+
+    if (accepted) {
+      actionArea = `
+        <button
+          class="btn"
+          onclick="
+            openChatById('${esc(
+              person.id
+            )}')
+          "
+        >
+          💬 Message
+        </button>
+
+        <button
+          class="btn secondary"
+          onclick="
+            removeContact('${esc(
+              person.id
+            )}')
+          "
+        >
+          🗑️ Remove Contact
+        </button>
+
+        <button
+          class="btn danger"
+          onclick="
+            blockContact('${esc(
+              person.id
+            )}')
+          "
+        >
+          🚫 Block
+        </button>
+      `;
+    } else if (outgoing) {
+      actionArea = `
+        <div
+          class="card"
+          style="
+            text-align:center;
+            color:#d4af37
+          "
+        >
+          ✓ Contact request sent
+        </div>
+      `;
+    } else if (incoming) {
+      const request =
+        state.contactRequests.find(
+          (item) =>
+            item.user_id ===
+            person.id
+        );
+
+      actionArea = `
+        <button
+          class="btn"
+          onclick="
+            acceptContactRequest('${
+              request?.id || ""
+            }')
+          "
+        >
+          ✓ Accept Request
+        </button>
+
+        <button
+          class="btn secondary"
+          onclick="
+            rejectContactRequest('${
+              request?.id || ""
+            }')
+          "
+        >
+          × Reject
+        </button>
+      `;
+    } else {
+      actionArea = `
+        <button
+          class="btn"
+          onclick="
+            sendContactRequest('${esc(
+              person.id
+            )}')
+          "
+        >
+          ＋ Add Contact
+        </button>
+      `;
+    }
+
+    app.innerHTML =
+      layout(
+        `
+          <div class="screen">
+
+            <div class="top">
+
+              <button
+                class="back"
+                onclick="
+                  go('contacts')
+                "
+              >
+                ‹
+              </button>
+
+              <div class="brand">
+                Contact
+              </div>
+
+            </div>
+
+            <div
+              class="content"
+              style="
+                text-align:center
+              "
+            >
+
+              <div class="card">
+
+                <div
+                  class="profile-avatar"
+                >
+                  ${esc(
+                    person.avatar ||
+                      "🦁"
+                  )}
+                </div>
+
+                <h2>
+                  ${esc(
+                    person.display_name
+                  )}
+                </h2>
+
+                <div class="sub">
+                  @${esc(
+                    person.username
+                  )}
+                </div>
+
+                <div
+                  class="online-status"
+                  style="
+                    margin-top:10px
+                  "
+                >
+
+                  <span
+                    class="status-dot ${
+                      online
+                        ? "online"
+                        : "offline"
+                    }"
+                  ></span>
+
+                  ${
+                    online
+                      ? "Online"
+                      : formatLastSeen(
+                          state
+                            .presence[
+                            person.id
+                          ]?.last_seen_at
+                        )
+                  }
+
+                </div>
+
+              </div>
+
+              <div
+                style="
+                  display:flex;
+                  flex-direction:column;
+                  gap:2px;
+                  align-items:center
+                "
+              >
+                ${actionArea}
+              </div>
+
+            </div>
+
+          </div>
+        `,
+        true
+      );
   }
 
   /* =========================================================
@@ -2443,13 +3656,6 @@
     const existingChatId =
       existingChat?.dataset
         ?.chatId;
-
-    /*
-      CRITICAL:
-      If chat already exists, only
-      update messages. Do NOT rebuild
-      the composer.
-    */
 
     if (
       existingChat &&
@@ -3242,6 +4448,15 @@
               <button
                 class="btn secondary"
                 onclick="
+                  go('contacts')
+                "
+              >
+                👥 Contacts
+              </button>
+
+              <button
+                class="btn secondary"
+                onclick="
                   openNotifications()
                 "
               >
@@ -3456,10 +4671,6 @@
       return;
     }
 
-    /*
-      Profile setup has priority and is protected.
-    */
-
     if (!state.profile) {
       state.screen = "setup";
       renderSetup();
@@ -3479,6 +4690,26 @@
       state.screen === "search"
     ) {
       renderSearch();
+      return;
+    }
+
+    if (
+      state.screen === "contacts"
+    ) {
+      await loadContacts();
+      await getProfiles();
+      renderContacts();
+      return;
+    }
+
+    if (
+      state.screen ===
+      "contactProfile"
+    ) {
+      await loadContacts();
+      await getProfiles();
+      await loadPresence();
+      renderContactProfile();
       return;
     }
 
@@ -3558,24 +4789,20 @@
             searchDraft = "";
 
             state.profile = null;
+            state.contacts = [];
+            state.contactRequests = [];
 
             clearInterval(poll);
             clearInterval(
               presencePoll
             );
 
+            await stopContactRealtime();
+
             render();
 
             return;
           }
-
-          /*
-            IMPORTANT:
-            Supabase can fire an auth event
-            while the profile form is open.
-
-            Never rebuild the form while typing.
-          */
 
           if (
             sameUser &&
@@ -3616,6 +4843,9 @@
           ) {
             await startPresence();
             await startMessageRealtime();
+            await startContactRealtime();
+            await loadContacts();
+
             startPolling();
 
             appInitialized =
@@ -3696,6 +4926,9 @@
 
           await startPresence();
           await startMessageRealtime();
+          await startContactRealtime();
+          await loadContacts();
+
           startPolling();
 
           state.screen =
