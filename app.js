@@ -1161,85 +1161,114 @@
 
     if (contactChannel) {
       try {
-        await db.removeChannel(
-          contactChannel
-        );
+        await db.removeChannel(contactChannel);
       } catch {}
     }
 
-    contactChannel =
-      db
-        .channel(
-          "leo-contacts-" +
-            state.user.id
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "contacts",
-            filter:
-              `contact_id=eq.${state.user.id}`
-          },
-          async () => {
-            await loadContacts();
-            await getProfiles();
+    contactChannel = db
+      .channel(
+        "leo-contacts-" +
+          state.user.id +
+          "-" +
+          randomId()
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "contacts",
+        },
+        async (payload) => {
+          const row =
+            payload.new ||
+            payload.old ||
+            {};
 
+          /*
+            Only react to contact rows involving
+            the currently logged-in user.
+          */
+          if (
+            row.user_id !== state.user.id &&
+            row.contact_id !== state.user.id
+          ) {
+            return;
+          }
+
+          await loadContacts();
+          await getProfiles();
+
+          /*
+            Incoming request
+          */
+          if (
+            payload.eventType === "INSERT" &&
+            row.contact_id === state.user.id &&
+            row.status === "pending"
+          ) {
             addNotification(
               "New contact request",
               "Someone wants to connect with you on Leo Chat."
             );
-
-            if (
-              state.screen ===
-              "contacts"
-            ) {
-              renderContacts();
-            }
           }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "contacts",
-            filter:
-              `contact_id=eq.${state.user.id}`
-          },
-          async () => {
-            await loadContacts();
 
-            if (
-              state.screen ===
-              "contacts"
-            ) {
-              renderContacts();
-            }
+          /*
+            Request accepted
+          */
+          if (
+            payload.eventType === "UPDATE" &&
+            row.status === "accepted"
+          ) {
+            addNotification(
+              "Contact request accepted",
+              "Your Leo Chat contact request was accepted."
+            );
           }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "DELETE",
-            schema: "public",
-            table: "contacts",
-            filter:
-              `contact_id=eq.${state.user.id}`
-          },
-          async () => {
-            await loadContacts();
 
-            if (
-              state.screen ===
-              "contacts"
-            ) {
-              renderContacts();
-            }
+          /*
+            Contact blocked
+          */
+          if (
+            payload.eventType === "UPDATE" &&
+            row.status === "blocked"
+          ) {
+            addNotification(
+              "Contact blocked",
+              "A contact relationship was blocked."
+            );
           }
-        )
-        .subscribe();
+
+          /*
+            Refresh the screen immediately.
+          */
+          if (state.screen === "contacts") {
+            renderContacts();
+          }
+
+          if (state.screen === "contactProfile") {
+            renderContactProfile();
+          }
+
+          if (state.screen === "search") {
+            filterPeople();
+          }
+
+          /*
+            Home can contain the pending-request banner,
+            so refresh it too.
+          */
+          if (state.screen === "home") {
+            render();
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log(
+          "Leo Contacts realtime:",
+          status
+        );
+      });
   }
 
   async function stopContactRealtime() {
@@ -2070,7 +2099,6 @@
     const n = [
       ["home", "💬", "Chats"],
       ["search", "⌕", "Search"],
-      ["contacts", "👥", "Contacts"],
       ["moments", "✦", "Moments"],
       ["calls", "☎", "Calls"],
       ["settings", "⚙", "Settings"]
