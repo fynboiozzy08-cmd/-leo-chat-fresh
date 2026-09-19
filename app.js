@@ -2105,7 +2105,23 @@
     ];
 
     return `
-      <div class="nav">
+      <div
+        class="nav"
+        style="
+          display:grid;
+          grid-template-columns:repeat(5,minmax(0,1fr));
+          width:100%;
+          max-width:100%;
+          box-sizing:border-box;
+          overflow:hidden;
+          position:fixed;
+          left:0;
+          right:0;
+          bottom:0;
+          z-index:1000;
+          padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));
+        "
+      >
         ${n
           .map(
             (x) =>
@@ -2120,9 +2136,32 @@
                   onclick="
                     go('${x[0]}')
                   "
+                  style="
+                    min-width:0;
+                    width:100%;
+                    max-width:none;
+                    overflow:hidden;
+                    display:flex;
+                    flex-direction:column;
+                    align-items:center;
+                    justify-content:center;
+                    gap:3px;
+                    padding:7px 2px;
+                    box-sizing:border-box;
+                    white-space:nowrap;
+                  "
                 >
                   ${icon(x[1])}
-                  <b>${x[2]}</b>
+                  <b
+                    style="
+                      display:block;
+                      max-width:100%;
+                      overflow:hidden;
+                      text-overflow:ellipsis;
+                      white-space:nowrap;
+                      font-size:11px;
+                    "
+                  >${x[2]}</b>
                 </button>
               `
           )
@@ -2709,7 +2748,7 @@
 
             </div>
 
-            <div class="content">
+            <div class="content" style="padding-bottom:calc(100px + env(safe-area-inset-bottom,0px));">
 
               <div class="card">
 
@@ -2918,7 +2957,7 @@
 
             </div>
 
-            <div class="content">
+            <div class="content" style="padding-bottom:calc(100px + env(safe-area-inset-bottom,0px));">
 
               <input
                 id="q"
@@ -3222,7 +3261,7 @@
 
             </div>
 
-            <div class="content">
+            <div class="content" style="padding-bottom:calc(100px + env(safe-area-inset-bottom,0px));">
 
               <button
                 class="btn"
@@ -4228,7 +4267,7 @@
 
             </div>
 
-            <div class="content">
+            <div class="content" style="padding-bottom:calc(100px + env(safe-area-inset-bottom,0px));">
 
               ${
                 state.moments.length
@@ -4350,7 +4389,7 @@
 
             </div>
 
-            <div class="content">
+            <div class="content" style="padding-bottom:calc(100px + env(safe-area-inset-bottom,0px));">
 
               <div class="card center">
 
@@ -4408,7 +4447,7 @@
 
             </div>
 
-            <div class="content">
+            <div class="content" style="padding-bottom:calc(100px + env(safe-area-inset-bottom,0px));">
 
               <div class="card">
 
@@ -4638,7 +4677,7 @@
 
             </div>
 
-            <div class="content">
+            <div class="content" style="padding-bottom:calc(100px + env(safe-area-inset-bottom,0px));">
 
               ${
                 state.notifications
