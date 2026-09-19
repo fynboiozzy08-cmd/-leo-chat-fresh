@@ -1,1 +1,1148 @@
-*{box-sizing:border-box}html,body{margin:0;padding:0;background:#050505;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;height:100%}body{min-height:100vh}button,input{font:inherit}button{cursor:pointer}.screen{min-height:100vh;padding:24px}.center{display:flex;flex-direction:column;align-items:center;justify-content:center}.brand{width:132px;height:132px;border-radius:36px;display:grid;place-items:center;font-size:76px;background:#090909;border:1px solid #d4af37;box-shadow:0 0 35px rgba(212,175,55,.12);margin-bottom:24px}h1{margin:0;color:#e0bf55;font-size:38px;font-weight:850}.tagline,.muted{color:#999}.tagline{font-size:17px;margin:10px 0 30px}.auth-card,.card,.profile-form{width:min(100%,520px)}input{width:100%;background:#151515;color:#fff;border:1px solid #303030;border-radius:15px;padding:16px;margin-bottom:12px;outline:none}input:focus{border-color:#d4af37}.gold,.outline{width:100%;border-radius:15px;padding:16px;font-weight:800;margin-top:8px}.gold{background:#d4af37;border:1px solid #d4af37;color:#050505}.outline{background:#111;border:1px solid #d4af37;color:#d4af37}.message{min-height:22px;color:#e0bf55;text-align:center}.error-card{background:#111;border:1px solid #2c2c2c;border-radius:20px;padding:22px;margin-top:25px}.small{font-size:13px}.app-shell{min-height:100vh;background:#050505;position:relative;padding-bottom:82px}.app-header,.simple-header{padding:52px 18px 18px;border-bottom:1px solid #1d1d1d;display:flex;justify-content:space-between;align-items:center}.app-header h1,.simple-header h1{font-size:24px}.app-header p{margin:5px 0 0;color:#777}.header-actions{display:flex;gap:8px}.icon-btn{background:none;border:0;color:#d4af37;font-size:24px;padding:8px}.people-list{padding-bottom:20px}.person-row{width:100%;background:none;border:0;border-bottom:1px solid #181818;color:#fff;display:flex;align-items:center;text-align:left;padding:15px 18px}.person-avatar{width:52px;height:52px;border-radius:50%;background:#151515;display:grid;place-items:center;font-size:27px;margin-right:14px;flex:none}.person-info{flex:1}.person-info strong,.person-info span,.person-info small{display:block}.person-info span{color:#777;margin-top:3px}.person-info small{color:#4fc878;margin-top:5px}.chevron{color:#666;font-size:28px}.empty,.placeholder{text-align:center;padding:90px 25px;color:#777}.empty>div,.placeholder>div{font-size:55px;margin-bottom:15px}.empty h3,.placeholder h2{color:#fff}.bottom-nav{position:fixed;left:0;right:0;bottom:0;height:82px;background:#0b0b0b;border-top:1px solid #222;display:flex;justify-content:space-around;align-items:center;padding-bottom:7px;z-index:20}.bottom-nav button{background:none;border:0;color:#666;font-size:20px;display:flex;flex-direction:column;align-items:center;gap:4px}.bottom-nav span{font-size:11px}.bottom-nav .active{color:#d4af37}.chat-header{height:74px;padding:38px 10px 8px;background:#0b0b0b;border-bottom:1px solid #222;display:flex;align-items:center;gap:8px}.chat-header .person-avatar{width:40px;height:40px;font-size:22px;margin:0}.back{background:none;border:0;color:#d4af37;font-size:42px;line-height:1}.chat-title{flex:1}.chat-title strong,.chat-title span{display:block}.chat-title span{font-size:12px;color:#777;margin-top:2px}.chat-messages{height:calc(100vh - 144px);overflow-y:auto;padding:16px 14px 22px;display:flex;flex-direction:column}.bubble{max-width:78%;padding:10px 14px;border-radius:18px;margin-bottom:9px;line-height:1.35}.bubble.mine{align-self:flex-end;background:#d4af37;color:#050505;border-bottom-right-radius:5px}.bubble.theirs{align-self:flex-start;background:#181818;color:#fff;border-bottom-left-radius:5px}.bubble small{display:block;text-align:right;font-size:10px;opacity:.65;margin-top:3px}.empty-chat{text-align:center;margin:auto;color:#777}.empty-chat div{font-size:48px}.composer{position:fixed;bottom:0;left:0;right:0;background:#0b0b0b;border-top:1px solid #222;padding:9px 10px;display:flex;gap:7px;z-index:30}.composer input{margin:0;flex:1;border-radius:23px;padding:11px 16px}.attach,.send{border:0;border-radius:50%;width:44px;height:44px;flex:none}.attach{background:none;color:#fff;font-size:24px}.send{background:#d4af37;color:#050505;font-size:20px;font-weight:900}.attach-sheet{position:fixed;left:0;right:0;bottom:62px;background:#121212;border:1px solid #292929;border-radius:22px 22px 0 0;padding:16px;z-index:40}.attach-sheet button{display:block;width:100%;background:none;border:0;border-bottom:1px solid #242424;color:#fff;text-align:left;padding:16px;font-weight:700}.attach-sheet button:last-child{border:0;color:#d4af37}.hidden{display:none!important}.media-preview{padding:9px 12px;background:#111;border-top:1px solid #222;display:flex;justify-content:space-between}.media-preview button{background:#ff5555;color:#fff;border:0;border-radius:50%;width:25px;height:25px}.settings{padding-bottom:30px}.setting-row{width:100%;display:flex;align-items:center;gap:12px;background:none;border:0;border-bottom:1px solid #191919;color:#fff;text-align:left;padding:19px}.setting-row>span{flex:1}.setting-row small{display:block;color:#777;margin-top:4px}.setting-row.logout b{color:#ff6565}.profile-form{margin:35px auto}.avatar-big{text-align:center;font-size:78px;margin-bottom:15px}.avatar-row{display:flex;justify-content:center;flex-wrap:wrap;margin-bottom:22px}.avatar-choice{width:50px;height:50px;border-radius:50%;margin:5px;background:#151515;border:1px solid #292929;font-size:25px}.simple-header{justify-content:flex-start}.placeholder{min-height:calc(100vh - 160px)}code{color:#d4af37}
+/* =========================================================
+   LEO CHAT — MOBILE RESPONSIVE STYLES
+   Black + Gold
+   Designed for iPhone / mobile screens
+   ========================================================= */
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  background: #050505;
+  color: #ffffff;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Display",
+    "SF Pro Text",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+button,
+input,
+textarea {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* =========================================================
+   MAIN APP
+   ========================================================= */
+
+.app {
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  background: #050505;
+}
+
+.shell {
+  width: 100%;
+  max-width: 600px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0 auto;
+  background: #050505;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* =========================================================
+   SCREENS
+   ========================================================= */
+
+.screen {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #050505;
+  padding-bottom: 92px;
+}
+
+.screen.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =========================================================
+   LOGO / BRAND
+   ========================================================= */
+
+.logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto 14px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #d4af37;
+  font-size: 21px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.brand img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.brand span {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* =========================================================
+   HEADINGS
+   ========================================================= */
+
+h1 {
+  margin: 8px 0 6px;
+  color: #d4af37;
+  font-size: clamp(30px, 8vw, 40px);
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -1px;
+  text-align: center;
+}
+
+h2 {
+  margin: 8px 0 10px;
+  color: #d4af37;
+  font-size: clamp(24px, 6vw, 30px);
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  text-align: center;
+}
+
+h3 {
+  margin: 22px 2px 12px;
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 750;
+}
+
+p {
+  line-height: 1.5;
+}
+
+.muted {
+  color: #858585;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   TOP HEADER
+   ========================================================= */
+
+.top {
+  min-height: 76px;
+  padding:
+    max(18px, env(safe-area-inset-top))
+    18px
+    14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  border-bottom: 1px solid #191919;
+  background: #080808;
+
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.top .brand {
+  max-width: calc(100% - 55px);
+}
+
+/* =========================================================
+   CONTENT
+   ========================================================= */
+
+.content {
+  width: 100%;
+  padding: 14px 16px 110px;
+}
+
+.content > * {
+  max-width: 100%;
+}
+
+/* =========================================================
+   CARDS
+   ========================================================= */
+
+.card {
+  width: 100%;
+  background: #0d0d0d;
+  border: 1px solid #1c1c1c;
+  border-radius: 16px;
+  padding: 15px;
+  margin-bottom: 12px;
+}
+
+.card h3 {
+  margin-top: 0;
+}
+
+/* =========================================================
+   ROWS
+   ========================================================= */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+/* =========================================================
+   AVATAR
+   ========================================================= */
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 50%;
+
+  background: #171717;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 25px;
+
+  border: 1px solid #262626;
+}
+
+.name {
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 750;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub {
+  color: #777777;
+  font-size: 13px;
+  line-height: 1.3;
+  margin-top: 3px;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   ONLINE STATUS
+   ========================================================= */
+
+.online-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  margin-top: 5px;
+
+  color: #777777;
+  font-size: 11px;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.online {
+  background: #4caf50;
+}
+
+.status-dot.offline {
+  background: #555555;
+}
+
+/* =========================================================
+   INPUTS
+   ========================================================= */
+
+.input {
+  width: 100%;
+  min-height: 48px;
+
+  border: 1px solid #292929;
+  border-radius: 12px;
+
+  background: #111111;
+  color: #ffffff;
+
+  padding: 12px 14px;
+
+  font-size: 16px;
+  line-height: 1.25;
+
+  outline: none;
+
+  margin: 7px 0;
+}
+
+.input:focus {
+  border-color: #d4af37;
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.08);
+}
+
+.input::placeholder {
+  color: #666666;
+}
+
+/* =========================================================
+   SEARCH
+   ========================================================= */
+
+.search {
+  margin-top: 2px;
+  margin-bottom: 12px;
+}
+
+/* =========================================================
+   GOLD BUTTONS
+   ========================================================= */
+
+.btn {
+  width: min(100%, 340px);
+  min-height: 48px;
+
+  display: block;
+  margin: 10px auto;
+
+  padding: 12px 20px;
+
+  border: 0;
+  border-radius: 13px;
+
+  background: #d4af37;
+  color: #050505;
+
+  font-size: 15px;
+  line-height: 1.2;
+  font-weight: 800;
+
+  box-shadow: none;
+}
+
+.btn:active {
+  transform: scale(0.985);
+}
+
+.btn.secondary {
+  background: transparent;
+  color: #d4af37;
+  border: 1px solid #d4af37;
+}
+
+/* =========================================================
+   ICON BUTTONS
+   ========================================================= */
+
+.iconbtn {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: transparent;
+  color: #d4af37;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 21px;
+}
+
+.iconbtn:active {
+  background: #171717;
+}
+
+/* =========================================================
+   LIST ITEMS
+   ========================================================= */
+
+.listitem {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 12px 4px;
+
+  border-bottom: 1px solid #181818;
+
+  cursor: pointer;
+}
+
+.listitem:active {
+  background: #101010;
+}
+
+.listitem .gold {
+  color: #d4af37;
+  font-size: 26px;
+  line-height: 1;
+}
+
+/* =========================================================
+   EMPTY STATES
+   ========================================================= */
+
+.empty {
+  padding: 60px 20px;
+  text-align: center;
+
+  color: #777777;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+.nav {
+  position: fixed;
+
+  left: 50%;
+  bottom: 0;
+
+  transform: translateX(-50%);
+
+  width: min(100%, 600px);
+
+  min-height: 72px;
+
+  padding:
+    7px 8px
+    max(7px, env(safe-area-inset-bottom));
+
+  background: rgba(11, 11, 11, 0.97);
+
+  border-top: 1px solid #222222;
+
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+
+  z-index: 100;
+
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.nav button {
+  border: 0;
+  background: transparent;
+
+  color: #666666;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 3px;
+
+  min-width: 0;
+  padding: 5px 2px;
+}
+
+.nav button span {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.nav button b {
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+.nav button.active {
+  color: #d4af37;
+}
+
+.nav button:active {
+  background: #151515;
+  border-radius: 10px;
+}
+
+/* =========================================================
+   CHAT
+   ========================================================= */
+
+.chat {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+
+  background: #050505;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+}
+
+/* =========================================================
+   CHAT HEADER
+   ========================================================= */
+
+.chathead {
+  flex-shrink: 0;
+
+  min-height: 70px;
+
+  padding:
+    max(10px, env(safe-area-inset-top))
+    10px
+    10px;
+
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  background: #0b0b0b;
+  border-bottom: 1px solid #222222;
+
+  z-index: 10;
+}
+
+.chathead .avatar {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  font-size: 22px;
+}
+
+.chathead .name {
+  font-size: 15px;
+}
+
+.chathead .iconbtn {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  font-size: 19px;
+}
+
+/* =========================================================
+   BACK BUTTON
+   ========================================================= */
+
+.back {
+  width: 36px;
+  height: 42px;
+  min-width: 36px;
+
+  padding: 0;
+
+  border: 0;
+  background: transparent;
+
+  color: #d4af37;
+
+  font-size: 35px;
+  line-height: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =========================================================
+   MESSAGES
+   ========================================================= */
+
+.messages {
+  flex: 1;
+
+  width: 100%;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding: 14px 13px 18px;
+
+  display: flex;
+  flex-direction: column;
+
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.bubble {
+  max-width: min(78%, 330px);
+
+  padding: 9px 12px 7px;
+
+  margin-bottom: 7px;
+
+  border-radius: 17px;
+
+  font-size: 15px;
+  line-height: 1.4;
+
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.bubble.mine {
+  align-self: flex-end;
+
+  background: #d4af37;
+  color: #050505;
+
+  border-bottom-right-radius: 5px;
+}
+
+.bubble.theirs {
+  align-self: flex-start;
+
+  background: #171717;
+  color: #ffffff;
+
+  border-bottom-left-radius: 5px;
+}
+
+.message-meta {
+  margin-top: 4px;
+
+  font-size: 9px;
+  line-height: 1;
+
+  text-align: right;
+
+  opacity: 0.55;
+}
+
+/* =========================================================
+   COMPOSER
+   ========================================================= */
+
+.composer {
+  flex-shrink: 0;
+
+  width: 100%;
+
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+
+  padding:
+    8px
+    9px
+    max(9px, env(safe-area-inset-bottom));
+
+  background: #0b0b0b;
+  border-top: 1px solid #222222;
+}
+
+.composer .iconbtn {
+  width: 40px;
+  height: 44px;
+  min-width: 40px;
+
+  font-size: 25px;
+}
+
+.composer .input {
+  flex: 1;
+
+  min-width: 0;
+
+  min-height: 44px;
+  max-height: 105px;
+
+  margin: 0;
+
+  padding: 11px 14px;
+
+  border-radius: 22px;
+
+  font-size: 15px;
+}
+
+.send {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: #d4af37;
+  color: #050505;
+
+  font-size: 19px;
+  font-weight: 900;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.send:active {
+  transform: scale(0.94);
+}
+
+/* =========================================================
+   FILE INPUT
+   ========================================================= */
+
+.photo-btn {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* =========================================================
+   ATTACHMENTS
+   ========================================================= */
+
+.attachment-list {
+  margin-top: 7px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.attachment-image {
+  display: block;
+
+  width: 100%;
+  max-width: 280px;
+
+  padding: 0;
+
+  border: 0;
+  background: transparent;
+
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.attachment-image img {
+  width: 100%;
+  max-width: 280px;
+  max-height: 360px;
+
+  display: block;
+
+  object-fit: cover;
+
+  border-radius: 12px;
+}
+
+.attachment-loading {
+  padding: 18px;
+
+  border-radius: 12px;
+
+  background: #111111;
+
+  color: #999999;
+
+  text-align: center;
+
+  font-size: 13px;
+}
+
+.attachment-file {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  padding: 10px 12px;
+
+  border: 1px solid #292929;
+  border-radius: 10px;
+
+  background: #111111;
+  color: #ffffff;
+
+  text-align: left;
+
+  font-size: 13px;
+
+  overflow: hidden;
+}
+
+.attachment-file span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   MOMENTS
+   ========================================================= */
+
+.moment {
+  width: 100%;
+
+  background: #0d0d0d;
+
+  border: 1px solid #1c1c1c;
+  border-radius: 16px;
+
+  overflow: hidden;
+
+  margin-bottom: 14px;
+}
+
+.moment img {
+  width: 100%;
+  max-height: 420px;
+
+  display: block;
+
+  object-fit: cover;
+}
+
+.moment p {
+  margin: 0;
+  padding: 13px 14px;
+
+  color: #ffffff;
+
+  font-size: 14px;
+}
+
+/* =========================================================
+   SWITCH
+   ========================================================= */
+
+.switch {
+  width: 42px;
+  height: 24px;
+
+  appearance: none;
+  -webkit-appearance: none;
+
+  border-radius: 20px;
+
+  background: #292929;
+
+  position: relative;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.switch::after {
+  content: "";
+
+  position: absolute;
+
+  width: 18px;
+  height: 18px;
+
+  left: 3px;
+  top: 3px;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  transition: 0.2s;
+}
+
+.switch:checked {
+  background: #d4af37;
+}
+
+.switch:checked::after {
+  transform: translateX(18px);
+}
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+
+.toast {
+  position: fixed;
+
+  left: 50%;
+
+  bottom: calc(
+    84px + env(safe-area-inset-bottom)
+  );
+
+  transform: translateX(-50%);
+
+  width: min(
+    calc(100% - 32px),
+    390px
+  );
+
+  padding: 11px 15px;
+
+  border-radius: 12px;
+
+  background: #171717;
+  border: 1px solid #303030;
+
+  color: #ffffff;
+
+  text-align: center;
+
+  font-size: 13px;
+  line-height: 1.35;
+
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.45);
+
+  z-index: 9999;
+}
+
+/* =========================================================
+   GOLD TEXT
+   ========================================================= */
+
+.gold {
+  color: #d4af37;
+}
+
+/* =========================================================
+   PROFILE SETUP
+   ========================================================= */
+
+#uname,
+#dname {
+  width: min(
+    100%,
+    360px
+  );
+
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/*
+  Keeps the profile screen compact on iPhone.
+*/
+
+#profileSaveButton {
+  margin-top: 12px;
+}
+
+/* =========================================================
+   LOGIN / SIGNUP CENTER CONTENT
+   ========================================================= */
+
+.screen.center {
+  padding:
+    24px
+    20px
+    max(40px, env(safe-area-inset-bottom));
+}
+
+.screen.center .logo {
+  width: 76px;
+  height: 76px;
+}
+
+.screen.center .muted {
+  max-width: 320px;
+  text-align: center;
+  margin: 0 0 18px;
+}
+
+.screen.center .input {
+  width: min(100%, 360px);
+}
+
+.screen.center .btn {
+  width: min(100%, 340px);
+}
+
+/* =========================================================
+   SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 380px) {
+
+  h1 {
+    font-size: 31px;
+  }
+
+  h2 {
+    font-size: 24px;
+  }
+
+  .content {
+    padding-left: 13px;
+    padding-right: 13px;
+  }
+
+  .top {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .brand {
+    font-size: 19px;
+  }
+
+  .avatar {
+    width: 45px;
+    height: 45px;
+    min-width: 45px;
+  }
+
+  .bubble {
+    max-width: 82%;
+    font-size: 14px;
+  }
+
+  .btn {
+    min-height: 46px;
+  }
+
+  .nav button span {
+    font-size: 19px;
+  }
+
+  .nav button b {
+    font-size: 9px;
+  }
+}
+
+/* =========================================================
+   LARGER PHONES / TABLETS
+   ========================================================= */
+
+@media (min-width: 601px) {
+
+  .shell {
+    border-left: 1px solid #111111;
+    border-right: 1px solid #111111;
+  }
+
+  .nav {
+    border-left: 1px solid #222222;
+    border-right: 1px solid #222222;
+  }
+
+  .content {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .bubble {
+    max-width: 70%;
+  }
+}
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* =========================================================
+   IOS SAFE AREA
+   ========================================================= */
+
+@supports (
+  padding: max(
+    0px
+  )
+) {
+
+  .screen.center {
+    padding-top:
+      max(
+        24px,
+        env(safe-area-inset-top)
+      );
+  }
+
+  .content {
+    padding-bottom:
+      max(
+        110px,
+        calc(
+          110px +
+          env(safe-area-inset-bottom)
+        )
+      );
+  }
+}
