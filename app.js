@@ -1,8 +1,9 @@
-alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
+alert("LEO NEW APP.JS 20260919 FIXED PROFILE + PHOTO");
 
 (() => {
   /* =========================================================
      LEO CHAT — WEB APP
+     Original Leo Chat design
      Fixed profile form re-render
      Real Supabase attachments + presence
      ========================================================= */
@@ -34,12 +35,33 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
     return;
   }
 
+  if (!cfg.SUPABASE_URL || !cfg.SUPABASE_KEY) {
+    app.innerHTML = `
+      <div class="app">
+        <div class="shell">
+          <div class="screen center">
+            <img class="logo" src="./logo.svg">
+            <h2>Leo Chat</h2>
+            <p class="muted">
+              Supabase configuration is missing.
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
   const db = window.supabase.createClient(
     cfg.SUPABASE_URL,
     cfg.SUPABASE_KEY
   );
 
   const MEDIA_BUCKET = "chat-media";
+
+  /* =========================================================
+     STATE
+     ========================================================= */
 
   let state = {
     user: null,
@@ -73,10 +95,17 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
   let authSubscription = null;
 
   /*
-    Prevent the initial Supabase auth event from rebuilding
-    a form while the user is typing.
+    IMPORTANT:
+    Once the profile form is on screen, background Supabase
+    events are NOT allowed to rebuild it.
   */
-  let bootFinished = false;
+  let profileFormActive = false;
+
+  /*
+    Prevent duplicate initialization when Supabase sends
+    its initial SIGNED_IN event after boot.
+  */
+  let appInitialized = false;
 
   const esc = (s) =>
     String(s ?? "").replace(
@@ -367,7 +396,7 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
             });
 
             /*
-              Do NOT rebuild the profile form here.
+              Never rebuild the setup/profile form.
             */
             if (
               state.screen === "home" ||
@@ -1020,6 +1049,52 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
       `;
     }
 
+    if (
+      attachment.attachment_type ===
+      "video"
+    ) {
+      if (attachment.signedUrl) {
+        return `
+          <button
+            class="attachment-file"
+            onclick="
+              openAttachment(
+                decodeURIComponent('${safePath}'),
+                decodeURIComponent('${safeType}')
+              )
+            "
+          >
+            🎥
+            <span>
+              ${esc(attachment.file_name)}
+            </span>
+          </button>
+        `;
+      }
+    }
+
+    if (
+      attachment.attachment_type ===
+      "audio"
+    ) {
+      return `
+        <button
+          class="attachment-file"
+          onclick="
+            openAttachment(
+              decodeURIComponent('${safePath}'),
+              decodeURIComponent('${safeType}')
+            )
+          "
+        >
+          🎵
+          <span>
+            ${esc(attachment.file_name)}
+          </span>
+        </button>
+      `;
+    }
+
     return `
       <button
         class="attachment-file"
@@ -1071,6 +1146,10 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
     );
   }
 
+  /* =========================================================
+     POLLING
+     ========================================================= */
+
   function startPolling() {
     clearInterval(poll);
 
@@ -1096,13 +1175,17 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
         }
 
         /*
-          Never refresh the profile setup form
-          while the user is typing.
+          IMPORTANT:
+          No render() happens while profile setup is active.
         */
       },
       5000
     );
   }
+
+  /* =========================================================
+     REALTIME MESSAGES
+     ========================================================= */
 
   async function startMessageRealtime() {
     if (!state.user) return;
@@ -1225,6 +1308,18 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
   }
 
   window.go = async (screen) => {
+    /*
+      Never navigate away from an unfinished profile
+      because of a background event.
+    */
+    if (
+      profileFormActive &&
+      state.screen === "setup" &&
+      screen !== "setup"
+    ) {
+      return;
+    }
+
     state.screen = screen;
 
     await updatePresenceActivity();
@@ -1282,6 +1377,11 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
 
   window.logout =
     async () => {
+      /*
+        Allow logout to happen normally.
+      */
+      profileFormActive = false;
+
       try {
         await markOffline();
       } catch {}
@@ -1314,16 +1414,18 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
       state.presence = {};
       state.screen = "home";
 
-      bootFinished = false;
+      appInitialized = false;
 
       render();
     };
 
   /* =========================================================
-     AUTH
+     AUTH SCREEN
      ========================================================= */
 
   function renderAuth() {
+    profileFormActive = false;
+
     app.innerHTML =
       layout(
         `
@@ -1442,18 +1544,22 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
           );
         }
 
-        await loadProfile();
-        await startPresence();
-        await startMessageRealtime();
-        startPolling();
+        profileFormActive = false;
 
-        /*
-          If there is no profile, go directly to
-          the setup screen.
-        */
-        if (!state.profile) {
+        await loadProfile();
+
+        if (state.profile) {
+          await startPresence();
+          await startMessageRealtime();
+          startPolling();
+
+          state.screen = "home";
+        } else {
           state.screen = "setup";
+          profileFormActive = true;
         }
+
+        appInitialized = true;
 
         render();
 
@@ -1470,24 +1576,35 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
      ========================================================= */
 
   function renderSetup() {
+    state.screen = "setup";
 
     /*
-      CRITICAL FIX:
+      THIS IS THE IMPORTANT FIX.
 
-      If the setup form already exists, do NOT rebuild it.
+      If the inputs already exist, do absolutely nothing.
 
-      Rebuilding the HTML while the user is typing was
-      clearing the username field.
+      This means:
+      - Supabase auth events cannot erase typing
+      - presence events cannot erase typing
+      - background polling cannot erase typing
+      - realtime events cannot erase typing
     */
 
+    const existingUsername =
+      document.getElementById("uname");
+
+    const existingDisplayName =
+      document.getElementById("dname");
+
     if (
-      document.getElementById("uname") &&
-      document.getElementById("dname")
+      existingUsername &&
+      existingDisplayName
     ) {
+      profileFormActive = true;
       return;
     }
 
-    state.screen = "setup";
+    profileFormActive = true;
 
     app.innerHTML =
       layout(
@@ -1509,11 +1626,17 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
               Set up your Leo profile
             </h2>
 
+            <p class="muted">
+              Enter Leo Chat
+            </p>
+
             <input
               id="uname"
               class="input"
               placeholder="Username"
               autocomplete="username"
+              autocapitalize="none"
+              spellcheck="false"
             >
 
             <input
@@ -1541,6 +1664,12 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
 
   window.saveProfile =
     async () => {
+
+      if (!state.user) {
+        return toast(
+          "Please log in again."
+        );
+      }
 
       const username =
         document
@@ -1584,6 +1713,11 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
           "Saving...";
       }
 
+      /*
+        Keep the form active while the request is running.
+      */
+      profileFormActive = true;
+
       try {
 
         const {
@@ -1618,6 +1752,12 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
         }
 
         state.profile = data;
+
+        /*
+          Profile is now safely saved.
+          Only now is it okay to leave setup.
+        */
+        profileFormActive = false;
 
         await ensurePresence();
         await getProfiles();
@@ -2302,7 +2442,7 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
     };
 
   /* =========================================================
-     ATTACHMENT PICKER
+     PHOTO / FILE PICKER
      ========================================================= */
 
   window.handleAttachments =
@@ -2310,19 +2450,30 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
       event
     ) => {
 
-      alert("PHOTO HANDLER FIRED");
+      const input =
+        event?.target;
 
       const files =
         Array.from(
-          event.target?.files ||
-            []
+          input?.files || []
         );
 
-      event.target.value = "";
+      /*
+        Clear the input only AFTER we have captured
+        the File objects.
+      */
+      if (input) {
+        input.value = "";
+      }
 
       if (!files.length) {
         return;
       }
+
+      console.log(
+        "LEO: Selected files:",
+        files
+      );
 
       for (
         const file of files
@@ -2868,17 +3019,21 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
       return;
     }
 
+    /*
+      Profile setup has absolute priority.
+      Never allow another screen to replace it until
+      the profile actually exists.
+    */
     if (!state.profile) {
-
-      /*
-        Always keep the user on the setup screen
-        until the profile actually exists.
-      */
       state.screen = "setup";
-
       renderSetup();
       return;
     }
+
+    /*
+      Once a real profile exists, the setup form is finished.
+    */
+    profileFormActive = false;
 
     if (
       state.screen === "chat"
@@ -2947,59 +3102,27 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
             session?.user ||
             null;
 
+          /*
+            If the exact same user is already initialized,
+            do not restart everything.
+
+            This is what prevents Supabase's initial
+            SIGNED_IN event from rebuilding the profile form.
+          */
+          const sameUser =
+            Boolean(
+              state.user &&
+              newUser &&
+              state.user.id ===
+                newUser.id
+            );
+
           state.user =
             newUser;
 
-          if (state.user) {
+          if (!state.user) {
 
-            /*
-              Load the profile first.
-            */
-            await loadProfile();
-
-            /*
-              If there is no profile, preserve the
-              setup screen instead of rebuilding it.
-            */
-            if (!state.profile) {
-              state.screen = "setup";
-
-              /*
-                Only render if the setup form isn't
-                already on screen.
-              */
-              if (
-                !document.getElementById(
-                  "uname"
-                )
-              ) {
-                renderSetup();
-              }
-
-              return;
-            }
-
-            /*
-              Profile exists.
-            */
-            await startPresence();
-            await startMessageRealtime();
-            startPolling();
-
-            /*
-              Do not interrupt the profile form.
-            */
-            if (
-              state.screen ===
-              "setup"
-            ) {
-              state.screen =
-                "home";
-            }
-
-            await render();
-
-          } else {
+            profileFormActive = false;
 
             state.profile = null;
 
@@ -3008,12 +3131,80 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
               presencePoll
             );
 
-            /*
-              Only render the auth screen when
-              the user is actually signed out.
-            */
             render();
+
+            return;
           }
+
+          /*
+            If the profile form is currently visible and the
+            auth event is only a duplicate SIGNED_IN event,
+            DO NOT touch the form.
+          */
+          if (
+            sameUser &&
+            profileFormActive &&
+            state.screen ===
+              "setup"
+          ) {
+            return;
+          }
+
+          await loadProfile();
+
+          if (!state.profile) {
+
+            state.screen =
+              "setup";
+
+            profileFormActive =
+              true;
+
+            /*
+              Only create the setup form if it does not
+              already exist.
+            */
+            if (
+              !document.getElementById(
+                "uname"
+              )
+            ) {
+              renderSetup();
+            }
+
+            return;
+          }
+
+          profileFormActive =
+            false;
+
+          /*
+            Avoid duplicate channels/pollers when the
+            initial auth event fires after boot.
+          */
+          if (
+            !sameUser ||
+            !appInitialized
+          ) {
+            await startPresence();
+            await startMessageRealtime();
+            startPolling();
+
+            appInitialized = true;
+          }
+
+          /*
+            If the profile now exists, home is safe.
+          */
+          if (
+            state.screen ===
+            "setup"
+          ) {
+            state.screen =
+              "home";
+          }
+
+          await render();
         }
       );
 
@@ -3028,37 +3219,6 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
 
   async function boot() {
     try {
-
-      if (
-        !cfg.SUPABASE_URL ||
-        !cfg.SUPABASE_KEY
-      ) {
-        app.innerHTML =
-          layout(
-            `
-              <div class="screen center">
-
-                <img
-                  class="logo"
-                  src="./logo.svg"
-                >
-
-                <h2>
-                  Leo Chat
-                </h2>
-
-                <p class="muted">
-                  Supabase configuration
-                  is missing.
-                </p>
-
-              </div>
-            `,
-            false
-          );
-
-        return;
-      }
 
       app.innerHTML =
         layout(
@@ -3107,21 +3267,31 @@ alert("LEO NEW APP.JS 20260919 FIXED PROFILE");
         await loadProfile();
 
         if (state.profile) {
+
           await startPresence();
           await startMessageRealtime();
           startPolling();
 
-          state.screen = "home";
+          state.screen =
+            "home";
+
+          appInitialized =
+            true;
 
         } else {
 
-          state.screen = "setup";
+          state.screen =
+            "setup";
+
+          profileFormActive =
+            true;
         }
       }
 
+      /*
+        Start listener AFTER the initial session is known.
+      */
       startAuthListener();
-
-      bootFinished = true;
 
       await render();
 
